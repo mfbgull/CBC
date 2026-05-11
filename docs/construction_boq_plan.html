@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construction BOQ Calculator — Full Strategic Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=Libre+Franklin:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a18;
+  --ink-2: #3d3d38;
+  --ink-3: #6b6b62;
+  --ink-4: #9b9b8f;
+  --paper: #f7f5f0;
+  --paper-2: #eeebe3;
+  --paper-3: #e4e0d6;
+  --accent: #b85c2a;
+  --accent-2: #d4843e;
+  --accent-light: #f5e9df;
+  --accent-border: #e8c4a8;
+  --green: #2d5a27;
+  --green-light: #e8f0e6;
+  --blue: #1e3a5f;
+  --blue-light: #e4ecf5;
+  --amber: #7a4f0d;
+  --amber-light: #fdf0da;
+  --red: #8b2020;
+  --red-light: #f9e8e8;
+  --rule: #ccc8be;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+/* ── SIDEBAR NAV ── */
+#nav {
+  position: fixed;
+  top: 0; left: 0;
+  width: 220px; height: 100vh;
+  background: var(--ink);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 0 0 2rem;
+  transition: transform 0.3s;
+}
+#nav .nav-brand {
+  padding: 1.25rem 1rem 1rem;
+  border-bottom: 1px solid #333;
+  margin-bottom: 0.5rem;
+}
+#nav .nav-brand span {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  color: var(--accent-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+#nav .nav-brand strong {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  color: #f0ece4;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+#nav a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 1rem;
+  font-size: 12px;
+  color: #9b9b8f;
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  transition: color 0.15s, background 0.15s;
+  border-left: 3px solid transparent;
+}
+#nav a:hover, #nav a.active {
+  color: #f0ece4;
+  background: rgba(255,255,255,0.06);
+  border-left-color: var(--accent-2);
+}
+#nav a .num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-3);
+  min-width: 18px;
+}
+#nav a:hover .num, #nav a.active .num { color: var(--accent-2); }
+
+/* ── MAIN CONTENT ── */
+main {
+  margin-left: 220px;
+  min-height: 100vh;
+}
+
+/* ── HERO ── */
+#hero {
+  background: var(--ink);
+  padding: 5rem 4rem 4rem;
+  border-bottom: 3px solid var(--accent);
+  position: relative;
+  overflow: hidden;
+}
+#hero::before {
+  content: 'BOQ';
+  position: absolute;
+  right: -20px; top: -30px;
+  font-family: 'Playfair Display', serif;
+  font-size: 220px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.03);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+#hero .eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-bottom: 1rem;
+}
+#hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  color: #f0ece4;
+  line-height: 1.15;
+  max-width: 700px;
+  margin-bottom: 1.5rem;
+}
+#hero .subtitle {
+  font-size: 16px;
+  color: #9b9b8f;
+  max-width: 560px;
+  line-height: 1.65;
+}
+#hero .meta-pills {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 2rem;
+}
+#hero .pill {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #c8c4bc;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── SECTIONS ── */
+section {
+  padding: 4rem 4rem 3rem;
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 2rem;
+}
+section:nth-child(odd) { background: var(--paper); }
+section:nth-child(even) { background: #fbf9f5; }
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--rule);
+}
+.section-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  padding-top: 6px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+/* ── TYPOGRAPHY ── */
+h3 {
+  font-family: 'Libre Franklin', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+  margin: 2rem 0 0.75rem;
+}
+h3:first-child { margin-top: 0; }
+p { margin-bottom: 1rem; color: var(--ink-2); }
+p:last-child { margin-bottom: 0; }
+strong { color: var(--ink); font-weight: 600; }
+
+/* ── CARDS & GRIDS ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin: 1.5rem 0; }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+.card-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 6px;
+}
+.card-title { font-weight: 600; font-size: 14px; color: var(--ink); margin-bottom: 6px; }
+.card-body { font-size: 13px; color: var(--ink-3); line-height: 1.6; }
+
+/* ── CALLOUTS ── */
+.callout {
+  border-left: 3px solid;
+  padding: 1rem 1.25rem;
+  border-radius: 0 6px 6px 0;
+  margin: 1.25rem 0;
+  font-size: 14px;
+}
+.callout-accent { border-color: var(--accent); background: var(--accent-light); color: var(--ink-2); }
+.callout-green { border-color: var(--green); background: var(--green-light); color: #1a3617; }
+.callout-blue { border-color: var(--blue); background: var(--blue-light); color: #0f2240; }
+.callout-amber { border-color: var(--amber); background: var(--amber-light); color: #5a3a08; }
+.callout-red { border-color: var(--red); background: var(--red-light); color: #5a1515; }
+.callout strong { font-weight: 600; }
+
+/* ── TAGS / BADGES ── */
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px;
+}
+.tag-must { background: #d4edda; color: #155724; }
+.tag-should { background: #fff3cd; color: #856404; }
+.tag-future { background: #d1ecf1; color: #0c5460; }
+.tag-skip { background: #f8d7da; color: #721c24; }
+
+/* ── OPPORTUNITY MATRIX ── */
+.opp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 1.25rem 0; }
+.opp-table th { background: var(--ink); color: #f0ece4; padding: 8px 12px; text-align: left; font-weight: 500; font-size: 11px; letter-spacing: 0.06em; }
+.opp-table td { padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.opp-table tr:last-child td { border-bottom: none; }
+.opp-table tr:nth-child(even) td { background: var(--paper-2); }
+.rank-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600;
+}
+
+.stars { color: var(--accent); font-size: 13px; }
+
+/* ── CODE BLOCKS ── */
+.code-block {
+  background: var(--ink);
+  color: #a8d8a8;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 1.25rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1rem 0;
+  line-height: 1.7;
+}
+.code-block .cm { color: #6b8f6b; }
+.code-block .ck { color: #88bbee; }
+.code-block .cs { color: #f5c06b; }
+.code-block .cv { color: #e8e8d0; }
+
+/* ── PHASE ROADMAP ── */
+.phase-block {
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+.phase-header {
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.phase-1 .phase-header { background: var(--accent-light); color: var(--accent); }
+.phase-2 .phase-header { background: var(--blue-light); color: var(--blue); }
+.phase-3 .phase-header { background: var(--green-light); color: var(--green); }
+.phase-4 .phase-header { background: var(--amber-light); color: var(--amber); }
+.phase-body { padding: 1.25rem; background: #fff; }
+.phase-body ul { list-style: none; }
+.phase-body li { padding: 4px 0; font-size: 13px; color: var(--ink-2); padding-left: 16px; position: relative; }
+.phase-body li::before { content: '→'; position: absolute; left: 0; color: var(--ink-4); font-size: 11px; top: 6px; }
+
+/* ── SCHEMA TABLE ── */
+.schema-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 1rem 0; }
+.schema-table th { background: var(--paper-2); padding: 8px 10px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); border-bottom: 2px solid var(--rule); }
+.schema-table td { padding: 7px 10px; border-bottom: 1px solid var(--paper-3); font-family: 'DM Mono', monospace; font-size: 11.5px; vertical-align: top; }
+.schema-table .td-name { color: var(--blue); font-weight: 500; }
+.schema-table .td-type { color: var(--accent); }
+.schema-table .td-desc { font-family: 'Libre Franklin', sans-serif; color: var(--ink-3); font-size: 12px; }
+.schema-table .pk { background: var(--amber-light); color: var(--amber); font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
+.schema-table .fk { background: var(--blue-light); color: var(--blue); font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
+
+/* ── RISK TABLE ── */
+.risk-row { border: 1px solid var(--rule); border-radius: 6px; padding: 1rem 1.25rem; margin: 0.75rem 0; background: #fff; }
+.risk-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.risk-name { font-weight: 600; font-size: 14px; color: var(--ink); }
+.severity { font-size: 11px; padding: 2px 8px; border-radius: 3px; font-family: 'DM Mono', monospace; }
+.sev-high { background: var(--red-light); color: var(--red); }
+.sev-med { background: var(--amber-light); color: var(--amber); }
+.sev-low { background: var(--green-light); color: var(--green); }
+.risk-body { font-size: 13px; color: var(--ink-3); line-height: 1.6; }
+.risk-mitigation { margin-top: 6px; font-size: 13px; color: var(--green); }
+.risk-mitigation strong { color: var(--green); }
+
+/* ── FORMULA BLOCK ── */
+.formula {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 1rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--ink);
+  margin: 0.75rem 0;
+  line-height: 1.8;
+}
+
+/* ── FINAL VERDICT ── */
+#final {
+  background: var(--ink) !important;
+  color: #f0ece4;
+}
+#final .section-title { color: #f0ece4; }
+#final .section-num { color: var(--accent-2); }
+#final p { color: #c8c4bc; }
+#final h3 { color: var(--accent-2); border-bottom: 1px solid #333; padding-bottom: 6px; }
+#final .verdict-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 0.75rem 0;
+}
+#final .verdict-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent-2); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+#final .verdict-value { font-size: 14px; color: #e8e4dc; line-height: 1.6; }
+#final .big-verdict {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: #fff;
+  line-height: 1.2;
+  margin: 1.5rem 0;
+}
+
+/* ── SCROLLBAR ── */
+#nav::-webkit-scrollbar { width: 4px; }
+#nav::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
+@media (max-width: 900px) {
+  #nav { width: 180px; }
+  main { margin-left: 180px; }
+  section { padding: 3rem 2rem; }
+  #hero { padding: 3rem 2rem 2.5rem; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  #nav { transform: translateX(-100%); }
+  main { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="nav">
+  <div class="nav-brand">
+    <span>Strategic Plan</span>
+    <strong>Construction BOQ Calculator</strong>
+  </div>
+  <a href="#industry"><span class="num">01</span> Industry Analysis</a>
+  <a href="#market"><span class="num">02</span> Market Opportunities</a>
+  <a href="#vision"><span class="num">03</span> Product Vision</a>
+  <a href="#mvp"><span class="num">04</span> MVP Scope</a>
+  <a href="#ux"><span class="num">05</span> UX/UI Strategy</a>
+  <a href="#arch"><span class="num">06</span> Technical Architecture</a>
+  <a href="#db"><span class="num">07</span> Database Design</a>
+  <a href="#calc"><span class="num">08</span> Calculation Engine</a>
+  <a href="#export"><span class="num">09</span> Export System</a>
+  <a href="#ai"><span class="num">10</span> AI Integration</a>
+  <a href="#monetize"><span class="num">11</span> Monetization</a>
+  <a href="#gtm"><span class="num">12</span> Go-To-Market</a>
+  <a href="#risks"><span class="num">13</span> Risk Analysis</a>
+  <a href="#roadmap"><span class="num">14</span> Dev Roadmap</a>
+  <a href="#final"><span class="num">15</span> Final Verdict</a>
+</nav>
+
+<main>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="eyebrow">Solo-Founder Startup Plan · 2025</div>
+  <h1>Construction BOQ Calculator</h1>
+  <p class="subtitle">A complete product, technical, and go-to-market strategy for building a desktop-first construction estimation tool targeting Pakistan and South Asia.</p>
+  <div class="meta-pills">
+    <span class="pill">React + TypeScript + Vite</span>
+    <span class="pill">Tauri (Rust backend)</span>
+    <span class="pill">SQLite</span>
+    <span class="pill">Pakistan / South Asia</span>
+    <span class="pill">Offline-First</span>
+    <span class="pill">Solo Developer</span>
+  </div>
+</div>
+
+<!-- 01 INDUSTRY ANALYSIS -->
+<section id="industry">
+  <div class="section-header">
+    <span class="section-num">Section 01</span>
+    <h2 class="section-title">Industry Analysis</h2>
+  </div>
+
+  <h3>Current Workflow Reality</h3>
+  <p>The typical construction estimator in Pakistan — whether a quantity surveyor at a mid-sized firm or a small contractor working residential projects — operates with a combination of printed rate schedules, WhatsApp price queries, and multi-tab Excel workbooks that took years to build. These files are irreplaceable, deeply personal, and completely opaque to anyone else. The workflow is: receive drawings, manually decompose into work items, look up market rates from memory or a phone call, type quantities, build SUBTOTALs in Excel, format a report, and email a PDF. This process takes 2–5 days for a mid-sized project and is error-prone at every step.</p>
+
+  <h3>Excel Dependency — Why It Persists</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">Why they love it</div>
+      <div class="card-body">Fully flexible formula system. Muscle memory built over years. No license cost. Prints reasonably well. Can share as attachment. Familiar to all parties in the project chain.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Why it breaks down</div>
+      <div class="card-body">No version history. Easy to corrupt. Formulas break silently. No audit trail. Sharing creates conflicts. Formatting takes enormous time. No client-facing templates. No rate database.</div>
+    </div>
+  </div>
+
+  <h3>Pain Points by Role</h3>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-label">Small Contractors</div>
+      <div class="card-title">Price Certainty</div>
+      <div class="card-body">They underbid or overbid because rates are guesswork. No system to track actual vs. estimated. Lose money silently on jobs.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Quantity Surveyors</div>
+      <div class="card-title">Report Quality & Time</div>
+      <div class="card-body">Spend 30–40% of their time on formatting and layout. Client-facing reports look inconsistent. Revision requests mean rebuilding from scratch.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Home Builders</div>
+      <div class="card-title">Budget Overruns</div>
+      <div class="card-body">No single source of truth for the project budget. Contractors give verbal quotes. No way to compare or verify. Final cost 20–40% over estimate is common.</div>
+    </div>
+  </div>
+
+  <h3>Pakistan/South Asia Specific Problems</h3>
+  <div class="callout callout-accent">
+    <strong>Market Rates Fluctuate Weekly.</strong> Steel, cement, and labour rates in Pakistan change with dollar exchange rate, import duty changes, and seasonal demand. Any rate database must be manually updatable and locally controlled — not pulled from a cloud API that might go stale or be irrelevant.
+  </div>
+  <p><strong>Urdu/English bilingual workflows:</strong> Many contractors label materials in Urdu but reports must go to clients in English. The tool should support both scripts without fighting the user.</p>
+  <p><strong>Pakistan Standard Specifications (PSS) and PHED/NHA rate schedules</strong> are government-issued documents that quantity surveyors reference constantly. Pre-loading these as importable templates is a strong differentiator. No existing tool does this for Pakistan specifically.</p>
+  <p><strong>Trust deficit toward software:</strong> Estimators fear that "the computer got it wrong." They want to see every formula. Hiding calculations in black boxes will kill adoption. The UI must show working, not just totals.</p>
+  <p><strong>Intermittent power and connectivity:</strong> Load shedding is real. The app must survive sudden shutdowns gracefully with autosave. Offline-first is not a nice-to-have — it is a hard requirement.</p>
+
+  <h3>Existing Software Problems</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">Global tools (CostX, Candy, ARES)</div>
+      <div class="card-body">$2,000–$15,000/year. English-only. Built for Western markets. No Pakistan rate schedules. Overly complex. Require multi-week training. Completely inaccessible for small contractors.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Local Excel templates (sold on OLX/Daraz)</div>
+      <div class="card-body">One-time PKR 500–2,000. No updates. Break when Excel version changes. No database. No export. Sold by random individuals with no support. Trust is zero.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 MARKET OPPORTUNITIES -->
+<section id="market">
+  <div class="section-header">
+    <span class="section-num">Section 02</span>
+    <h2 class="section-title">Market Opportunities</h2>
+  </div>
+
+  <table class="opp-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Opportunity</th>
+        <th>Dev Ease</th>
+        <th>Demand</th>
+        <th>Revenue</th>
+        <th>Competition</th>
+        <th>AI Potential</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="rank-badge">1</span></td>
+        <td><strong>Localized BOQ Estimation Tool</strong><br><small>Pakistan rate schedules, PSS specs, PKR currency, Urdu labels</small></td>
+        <td><span class="stars">★★★★★</span></td>
+        <td><span class="stars">★★★★★</span></td>
+        <td><span class="stars">★★★★☆</span></td>
+        <td><span class="stars">★☆☆☆☆</span> Low</td>
+        <td><span class="stars">★★★☆☆</span></td>
+      </tr>
+      <tr>
+        <td><span class="rank-badge">2</span></td>
+        <td><strong>Material Rate Database System</strong><br><small>Local, updatable, city-level rates with date tracking</small></td>
+        <td><span class="stars">★★★★☆</span></td>
+        <td><span class="stars">★★★★★</span></td>
+        <td><span class="stars">★★★★☆</span></td>
+        <td><span class="stars">★☆☆☆☆</span> Low</td>
+        <td><span class="stars">★★★★☆</span></td>
+      </tr>
+      <tr>
+        <td><span class="rank-badge">3</span></td>
+        <td><strong>Template & Item Library System</strong><br><small>Reusable BOQ templates by project type (house, shop, road)</small></td>
+        <td><span class="stars">★★★★★</span></td>
+        <td><span class="stars">★★★★☆</span></td>
+        <td><span class="stars">★★★☆☆</span></td>
+        <td><span class="stars">★★☆☆☆</span></td>
+        <td><span class="stars">★★★★☆</span></td>
+      </tr>
+      <tr>
+        <td><span class="rank-badge">4</span></td>
+        <td><strong>Revision Management</strong><br><small>Track changes across BOQ versions, compare delta costs</small></td>
+        <td><span class="stars">★★★☆☆</span></td>
+        <td><span class="stars">★★★★☆</span></td>
+        <td><span class="stars">★★★★☆</span></td>
+        <td><span class="stars">★★☆☆☆</span></td>
+        <td><span class="stars">★★☆☆☆</span></td>
+      </tr>
+      <tr>
+        <td><span class="rank-badge">5</span></td>
+        <td><strong>AI-Assisted Item Generation</strong><br><small>Describe work, AI generates line items with quantities</small></td>
+        <td><span class="stars">★★☆☆☆</span></td>
+        <td><span class="stars">★★★★☆</span></td>
+        <td><span class="stars">★★★★★</span></td>
+        <td><span class="stars">★★☆☆☆</span></td>
+        <td><span class="stars">★★★★★</span></td>
+      </tr>
+      <tr>
+        <td><span class="rank-badge">6</span></td>
+        <td><strong>Contractor Quote Comparison</strong><br><small>Upload 3 quotes, auto-compare line by line</small></td>
+        <td><span class="stars">★★★☆☆</span></td>
+        <td><span class="stars">★★★☆☆</span></td>
+        <td><span class="stars">★★★☆☆</span></td>
+        <td><span class="stars">★★☆☆☆</span></td>
+        <td><span class="stars">★★★☆☆</span></td>
+      </tr>
+      <tr>
+        <td><span class="rank-badge">7</span></td>
+        <td><strong>Drawing-Based Estimation</strong><br><small>OCR/AI reads drawings, extracts quantities automatically</small></td>
+        <td><span class="stars">★☆☆☆☆</span></td>
+        <td><span class="stars">★★★★★</span></td>
+        <td><span class="stars">★★★★★</span></td>
+        <td><span class="stars">★★★☆☆</span></td>
+        <td><span class="stars">★★★★★</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-green">
+    <strong>Biggest underserved gap:</strong> There is no affordable, offline, Pakistan-specific BOQ tool in existence. The market is entirely served by Excel templates or unaffordable global enterprise software. This is a genuine blue ocean for items 1–3 above.
+  </div>
+</section>
+
+<!-- 03 PRODUCT VISION -->
+<section id="vision">
+  <div class="section-header">
+    <span class="section-num">Section 03</span>
+    <h2 class="section-title">Product Vision</h2>
+  </div>
+
+  <div class="callout callout-blue" style="font-size: 16px; padding: 1.5rem;">
+    <strong>"The professional construction estimator's workbench — as fast as Excel, but built for Pakistan's construction reality."</strong>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <h3>Core Vision</h3>
+      <p>A desktop-first application that replaces the estimator's Excel workbook without requiring them to change how they think. The app behaves like a spreadsheet but stores data properly, enforces calculations correctly, and produces client-ready reports in one click. It works without the internet, survives load shedding, and costs less than a day's labour.</p>
+
+      <h3>Biggest Pain Solved</h3>
+      <p>The transition from raw quantities to a professional, printable, client-ready BOQ currently takes 30–60% of an estimator's time due to formatting. This app collapses that to zero. You enter data; the report formats itself.</p>
+
+      <h3>Why Users Would Switch from Excel</h3>
+      <p>They won't "switch" — the app must feel like an upgrade of Excel, not a replacement. The first session should let them import their existing Excel rates. The interface must use the same mental model: rows, columns, formulas, totals. The switching cost must feel like zero.</p>
+    </div>
+    <div>
+      <h3>Competitive Advantage</h3>
+      <div class="card" style="margin-bottom: 1rem;">
+        <div class="card-label">Localization Moat</div>
+        <div class="card-body">PSS specs, PHED rates, city-level pricing for Lahore/Karachi/Islamabad/Peshawar pre-loaded. No global tool will ever invest in this.</div>
+      </div>
+      <div class="card" style="margin-bottom: 1rem;">
+        <div class="card-label">Offline-First Architecture</div>
+        <div class="card-body">SQLite on-device. Zero dependency on servers. No subscription anxiety. No data leakage fear.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Price Point</div>
+        <div class="card-body">PKR 5,000–15,000 one-time license. Affordable for individual contractors. Incomparable to $5,000/year alternatives.</div>
+      </div>
+
+      <h3>Long-Term Moat</h3>
+      <p>The rate database grows richer with every user update. The template library becomes an ecosystem. Power users become evangelists in WhatsApp contractor groups. Network effects in a niche market are extremely sticky.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 04 MVP SCOPE -->
+<section id="mvp">
+  <div class="section-header">
+    <span class="section-num">Section 04</span>
+    <h2 class="section-title">MVP Scope</h2>
+  </div>
+
+  <div class="callout callout-accent">
+    <strong>Design principle:</strong> The MVP must be so fast and so useful on Day 1 that a contractor can open it, create a project, enter 20 BOQ items, and print a professional report — all in under 30 minutes — without any training.
+  </div>
+
+  <h3>Must Have <span class="tag tag-must">MUST HAVE</span></h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Project Management</div>
+      <div class="card-body">Create, list, open, archive projects. Store client name, site address, project type, date. Simple dashboard showing all projects.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">BOQ Table (AG Grid)</div>
+      <div class="card-body">Spreadsheet-like grid. Columns: Item No, Description, Unit, Qty, Rate, Amount. Section headers (Earthwork, Concrete, etc.). Drag-to-reorder rows. Tab key navigation.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Calculation Engine</div>
+      <div class="card-body">Auto-calculate Amount = Qty × Rate. Section subtotals. Grand total. GST/tax line. Profit margin line. All recalculate instantly on any change.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Material Rate Library</div>
+      <div class="card-body">Local SQLite table of materials with rates. User can add, edit, delete. Rates auto-populate when adding items. Filter by category (Civil, Finishing, MEP).</div>
+    </div>
+    <div class="card">
+      <div class="card-title">PDF Export</div>
+      <div class="card-body">One-click PDF output. Professional header with company name, project details, date. Paginated table. Totals on final page. Logo upload support.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Excel Export</div>
+      <div class="card-body">Export to .xlsx with proper formatting. Formulas intact. Users can share with clients who expect Excel. Formatted, not raw data.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Templates</div>
+      <div class="card-body">Save any BOQ as a template. Apply template to new project. 5–10 built-in templates (Residential House, Shop Renovation, Road Work, etc.).</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Autosave + Backup</div>
+      <div class="card-body">Save on every change with debounce. Manual backup to folder. SQLite file is portable — users can copy it to USB drive as backup.</div>
+    </div>
+  </div>
+
+  <h3>Should Have <span class="tag tag-should">SHOULD HAVE</span></h3>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Revision System</div>
+      <div class="card-body">Save named revisions (Rev A, Rev B). Compare costs between revisions. Restore old revision.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Quantity Dimensions</div>
+      <div class="card-body">Sub-rows for L×W×H calculations. Auto-total to quantity. Critical for earthwork and concrete.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Company Profile</div>
+      <div class="card-body">Logo, company name, address, registration number — prints on every report automatically.</div>
+    </div>
+  </div>
+
+  <h3>Future Features <span class="tag tag-future">FUTURE</span></h3>
+  <p>AI item generation, drawing OCR, contractor comparison, multi-user collaboration, cloud sync, mobile companion app, WhatsApp report sharing, payment integration.</p>
+
+  <h3>Do Not Build Yet <span class="tag tag-skip">SKIP</span></h3>
+  <div class="callout callout-red">
+    <strong>Do NOT build:</strong> Cloud sync (adds enormous complexity + cost), user accounts/auth (overkill for offline desktop), real-time collaboration (not needed for solo use), drawing import (months of work), mobile app (different interaction model entirely). Every one of these will derail your MVP. Build them in Phase 3+.
+  </div>
+</section>
+
+<!-- 05 UX/UI STRATEGY -->
+<section id="ux">
+  <div class="section-header">
+    <span class="section-num">Section 05</span>
+    <h2 class="section-title">UX / UI Strategy</h2>
+  </div>
+
+  <h3>Spreadsheet-Like Experience — Non-Negotiable</h3>
+  <p>The BOQ table must behave exactly like Excel in terms of keyboard navigation: <strong>Tab</strong> moves right, <strong>Enter</strong> moves down, <strong>F2</strong> edits cell, <strong>Escape</strong> cancels, <strong>Ctrl+C/V</strong> copy-paste rows. AG Grid with custom cell editors achieves this. Users who feel "lost" from their Excel muscle memory will uninstall within an hour.</p>
+
+  <h3>Page Structure</h3>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-label">Screen 1</div>
+      <div class="card-title">Project Dashboard</div>
+      <div class="card-body">Grid of project cards. Search bar. "New Project" CTA. Recent projects at top. No clutter.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Screen 2</div>
+      <div class="card-title">BOQ Editor</div>
+      <div class="card-body">Full-width AG Grid. Toolbar above (add row, add section, delete, export). Section headers as pinned rows. Summary panel on right (collapsible).</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Screen 3</div>
+      <div class="card-title">Rate Library</div>
+      <div class="card-body">Searchable table of materials. Add/edit/delete. Import from Excel. Used as autocomplete source in BOQ editor.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Screen 4</div>
+      <div class="card-title">Templates</div>
+      <div class="card-body">Library of saved BOQ templates. Preview before applying. Manage tags (Residential, Commercial, etc.).</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Screen 5</div>
+      <div class="card-title">Reports</div>
+      <div class="card-body">Print preview. Customise header/footer. Export PDF/Excel. Logo placement. Page setup.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Screen 6</div>
+      <div class="card-title">Settings</div>
+      <div class="card-body">Company profile. Default tax rate. Currency format. Backup folder. Keyboard shortcut guide.</div>
+    </div>
+  </div>
+
+  <h3>Critical UX Patterns</h3>
+  <div class="callout callout-blue">
+    <strong>Right-click context menu</strong> on any row: Insert Above, Insert Below, Duplicate, Add Section Header, Delete, Copy to Template. Power users will use this constantly.
+  </div>
+  <div class="callout callout-green">
+    <strong>Smart autocomplete in Description field:</strong> As user types "C25 Concrete", the rate library returns matching items. Selecting one auto-fills Unit and Rate. This single feature will generate the most "wow" moments in demos.
+  </div>
+  <div class="callout callout-amber">
+    <strong>Unsaved change indicator:</strong> Dot in the title bar (like VS Code). Users coming from Excel are paranoid about losing work. Show them it's saved every 2 seconds.
+  </div>
+
+  <h3>Visual Style</h3>
+  <p>Professional, neutral, tool-oriented — think Bloomberg Terminal meets QGIS. <strong>Not</strong> a consumer SaaS gradient app. Use a neutral gray/white base with a single strong accent color (navy blue or construction orange). Typography: clean, legible, data-dense but not cramped. Every pixel of screen space is valuable on a 1366×768 laptop (the most common Pakistani office screen).</p>
+
+  <h3>Keyboard Shortcuts Reference</h3>
+  <div class="formula">
+    Ctrl+N          → New Project<br>
+    Ctrl+S          → Manual Save<br>
+    Ctrl+P          → Print Preview<br>
+    Ctrl+E          → Export PDF<br>
+    Ctrl+Shift+E    → Export Excel<br>
+    Ctrl+D          → Duplicate selected row<br>
+    Ctrl+Enter      → Add new row below<br>
+    Ctrl+Shift+H    → Add section header<br>
+    F5              → Recalculate all<br>
+    Alt+R           → Open Rate Library<br>
+    Alt+T           → Open Templates
+  </div>
+</section>
+
+<!-- 06 TECHNICAL ARCHITECTURE -->
+<section id="arch">
+  <div class="section-header">
+    <span class="section-num">Section 06</span>
+    <h2 class="section-title">Technical Architecture</h2>
+  </div>
+
+  <h3>Electron vs Tauri — Use Tauri</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">Electron</div>
+      <div class="card-body">Ships Chromium + Node.js with every install. Installer: ~120MB. Memory: 200–400MB baseline. Well-documented. Every JS library works. But too heavy for low-spec Pakistani laptops.</div>
+    </div>
+    <div class="card" style="border-color: var(--accent);">
+      <div class="card-label" style="color: var(--accent);">✓ Tauri (Recommended)</div>
+      <div class="card-body">Uses system WebView. Installer: ~3–8MB. Memory: 30–80MB baseline. Rust backend handles SQLite natively via <code>tauri-plugin-sql</code>. System file dialogs for save/open. Fast startup. Better for target market hardware.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-accent">
+    <strong>Tauri caveat:</strong> Tauri's WebView uses the OS WebView (WebView2 on Windows, WebKit on macOS). Test AG Grid thoroughly on Windows 10/11 WebView2. Minor rendering differences exist but are manageable. The performance and binary size gains are worth it.
+  </div>
+
+  <h3>Frontend Module Structure</h3>
+  <div class="code-block">
+<span class="cm">src/</span>
+├── <span class="ck">features/</span>
+│   ├── <span class="cs">projects/</span>          <span class="cm">← Project CRUD, dashboard</span>
+│   ├── <span class="cs">boq/</span>               <span class="cm">← BOQ table, AG Grid config, cell editors</span>
+│   │   ├── <span class="cv">BoqGrid.tsx</span>
+│   │   ├── <span class="cv">BoqToolbar.tsx</span>
+│   │   ├── <span class="cv">columnDefs.ts</span>
+│   │   ├── <span class="cv">cellEditors/</span>
+│   │   └── <span class="cv">hooks/useBoqData.ts</span>
+│   ├── <span class="cs">rates/</span>              <span class="cm">← Material rate library</span>
+│   ├── <span class="cs">templates/</span>          <span class="cm">← Template CRUD</span>
+│   ├── <span class="cs">export/</span>             <span class="cm">← PDF + Excel engines</span>
+│   └── <span class="cs">settings/</span>           <span class="cm">← Company profile, defaults</span>
+├── <span class="ck">lib/</span>
+│   ├── <span class="cv">db.ts</span>               <span class="cm">← Tauri SQL plugin wrapper</span>
+│   ├── <span class="cv">calculator.ts</span>       <span class="cm">← Pure calculation functions</span>
+│   ├── <span class="cv">validator.ts</span>        <span class="cm">← Input validation</span>
+│   └── <span class="cv">formatter.ts</span>        <span class="cm">← Number/currency formatting</span>
+├── <span class="ck">store/</span>
+│   ├── <span class="cv">projectStore.ts</span>     <span class="cm">← Zustand slice</span>
+│   ├── <span class="cv">boqStore.ts</span>
+│   └── <span class="cv">rateStore.ts</span>
+└── <span class="ck">components/</span>          <span class="cm">← Shared UI (Button, Modal, etc.)</span>
+  </div>
+
+  <h3>State Management — Zustand (not Redux)</h3>
+  <p>Redux is overkill. Use <strong>Zustand</strong> for simple, colocated state. Each feature has its own store slice. The BOQ store holds the current project's line items in memory. On every change, it calls the DB write (debounced 500ms). AG Grid reads from Zustand, not directly from SQLite — this gives instant UI updates.</p>
+
+  <h3>Autosave Strategy</h3>
+  <div class="formula">
+    User edits cell → Zustand state updates instantly (AG Grid re-renders)
+    → debounce(500ms) triggers → db.saveBoqItem(item)
+    → title bar shows "Saved ✓" indicator
+    → On app close: force flush any pending saves
+    → On crash recovery: read last state from SQLite (it's always current)
+  </div>
+
+  <h3>Backup Strategy</h3>
+  <p>The SQLite file lives at <code>%APPDATA%/BoqCalculator/db.sqlite</code> on Windows. Settings menu exposes a "Backup Now" button that copies this file to a user-chosen folder with a timestamp. Optional: auto-backup on each export action. Educate users to add this folder to their Google Drive or USB stick routine — don't build cloud sync for MVP.</p>
+</section>
+
+<!-- 07 DATABASE DESIGN -->
+<section id="db">
+  <div class="section-header">
+    <span class="section-num">Section 07</span>
+    <h2 class="section-title">Database Design</h2>
+  </div>
+
+  <h3>projects</h3>
+  <table class="schema-table">
+    <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="td-name">id<span class="pk">PK</span></td><td class="td-type">INTEGER</td><td class="td-desc">Auto-increment primary key</td></tr>
+      <tr><td class="td-name">name</td><td class="td-type">TEXT</td><td class="td-desc">Project name</td></tr>
+      <tr><td class="td-name">client_name</td><td class="td-type">TEXT</td><td class="td-desc">Client/owner name</td></tr>
+      <tr><td class="td-name">site_address</td><td class="td-type">TEXT</td><td class="td-desc">Construction site address</td></tr>
+      <tr><td class="td-name">project_type</td><td class="td-type">TEXT</td><td class="td-desc">Residential, Commercial, Infrastructure, etc.</td></tr>
+      <tr><td class="td-name">status</td><td class="td-type">TEXT</td><td class="td-desc">Draft, Submitted, Awarded, Archived</td></tr>
+      <tr><td class="td-name">currency</td><td class="td-type">TEXT</td><td class="td-desc">PKR default</td></tr>
+      <tr><td class="td-name">tax_rate</td><td class="td-type">REAL</td><td class="td-desc">GST % (default 17 for Pakistan)</td></tr>
+      <tr><td class="td-name">notes</td><td class="td-type">TEXT</td><td class="td-desc">Internal notes</td></tr>
+      <tr><td class="td-name">created_at</td><td class="td-type">TEXT</td><td class="td-desc">ISO timestamp</td></tr>
+      <tr><td class="td-name">updated_at</td><td class="td-type">TEXT</td><td class="td-desc">ISO timestamp — updated on every save</td></tr>
+    </tbody>
+  </table>
+
+  <h3>boq_items</h3>
+  <table class="schema-table">
+    <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="td-name">id<span class="pk">PK</span></td><td class="td-type">INTEGER</td><td class="td-desc">Auto-increment</td></tr>
+      <tr><td class="td-name">project_id<span class="fk">FK</span></td><td class="td-type">INTEGER</td><td class="td-desc">References projects.id</td></tr>
+      <tr><td class="td-name">revision_id<span class="fk">FK</span></td><td class="td-type">INTEGER</td><td class="td-desc">References revisions.id (NULL = current)</td></tr>
+      <tr><td class="td-name">item_no</td><td class="td-type">TEXT</td><td class="td-desc">User-defined item number (1.1, 1.2, A, etc.)</td></tr>
+      <tr><td class="td-name">description</td><td class="td-type">TEXT</td><td class="td-desc">Work item description</td></tr>
+      <tr><td class="td-name">unit</td><td class="td-type">TEXT</td><td class="td-desc">m³, m², Rft, Nos, Kg, LS, etc.</td></tr>
+      <tr><td class="td-name">quantity</td><td class="td-type">REAL</td><td class="td-desc">Total quantity</td></tr>
+      <tr><td class="td-name">rate</td><td class="td-type">REAL</td><td class="td-desc">Rate per unit in PKR</td></tr>
+      <tr><td class="td-name">amount</td><td class="td-type">REAL</td><td class="td-desc">Computed: quantity × rate (stored for speed)</td></tr>
+      <tr><td class="td-name">is_section_header</td><td class="td-type">INTEGER</td><td class="td-desc">1 = section separator row, 0 = normal item</td></tr>
+      <tr><td class="td-name">sort_order</td><td class="td-type">INTEGER</td><td class="td-desc">Display order — reorder by updating this field</td></tr>
+      <tr><td class="td-name">material_id<span class="fk">FK</span></td><td class="td-type">INTEGER</td><td class="td-desc">Link to rates.id if sourced from rate library</td></tr>
+      <tr><td class="td-name">notes</td><td class="td-type">TEXT</td><td class="td-desc">Item-level notes/specs</td></tr>
+    </tbody>
+  </table>
+
+  <h3>rates (Material Rate Library)</h3>
+  <table class="schema-table">
+    <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="td-name">id<span class="pk">PK</span></td><td class="td-type">INTEGER</td><td class="td-desc"></td></tr>
+      <tr><td class="td-name">name</td><td class="td-type">TEXT</td><td class="td-desc">Material/work name</td></tr>
+      <tr><td class="td-name">category</td><td class="td-type">TEXT</td><td class="td-desc">Civil, Finishing, MEP, Steel, Earthwork, etc.</td></tr>
+      <tr><td class="td-name">unit</td><td class="td-type">TEXT</td><td class="td-desc">Default unit</td></tr>
+      <tr><td class="td-name">rate</td><td class="td-type">REAL</td><td class="td-desc">Current rate in PKR</td></tr>
+      <tr><td class="td-name">city</td><td class="td-type">TEXT</td><td class="td-desc">Lahore, Karachi, Islamabad, Peshawar — NULL = national</td></tr>
+      <tr><td class="td-name">last_updated</td><td class="td-type">TEXT</td><td class="td-desc">When rate was last edited — displayed to warn of stale rates</td></tr>
+      <tr><td class="td-name">is_system</td><td class="td-type">INTEGER</td><td class="td-desc">1 = built-in/default, 0 = user-added</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Other Tables (Summary)</h3>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-label">templates</div>
+      <div class="card-body"><code>id, name, description, project_type, created_at</code> — stores template metadata. Items stored as JSON blob or as boq_items with template_id reference.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">revisions</div>
+      <div class="card-body"><code>id, project_id, name, created_at, notes</code> — each revision snapshots the BOQ items at that point in time. Restoring = copy snapshot items back to current.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">settings</div>
+      <div class="card-body"><code>key, value</code> — simple key-value. Stores company_name, logo_path, default_tax, backup_path, etc. No ORM needed — direct SQL.</div>
+    </div>
+  </div>
+
+  <h3>Critical Indexes</h3>
+  <div class="code-block">
+<span class="ck">CREATE INDEX</span> <span class="cs">idx_boq_project</span> <span class="ck">ON</span> boq_items(project_id, sort_order);
+<span class="ck">CREATE INDEX</span> <span class="cs">idx_boq_revision</span> <span class="ck">ON</span> boq_items(revision_id);
+<span class="ck">CREATE INDEX</span> <span class="cs">idx_rates_category</span> <span class="ck">ON</span> rates(category, city);
+<span class="ck">CREATE INDEX</span> <span class="cs">idx_rates_name</span> <span class="ck">ON</span> rates(name); <span class="cm">← full-text search candidate</span>
+  </div>
+</section>
+
+<!-- 08 CALCULATION ENGINE -->
+<section id="calc">
+  <div class="section-header">
+    <span class="section-num">Section 08</span>
+    <h2 class="section-title">BOQ Calculation Engine</h2>
+  </div>
+
+  <h3>Architecture Principle — Pure Functions, No Side Effects</h3>
+  <p>The entire calculation engine lives in <code>src/lib/calculator.ts</code> as pure TypeScript functions. They receive data in, return computed data out. No database calls, no UI updates, no side effects. This makes them trivially testable and debuggable.</p>
+
+  <h3>Core Calculation Flow</h3>
+  <div class="formula">
+    <strong>// Per-item calculation</strong><br>
+    amount = round(quantity × rate, 2)<br><br>
+    <strong>// Section subtotal</strong><br>
+    sectionSubtotal = sum(amounts of all items in section)<br><br>
+    <strong>// Project totals</strong><br>
+    subtotal = sum(all section subtotals)<br>
+    contingency = round(subtotal × contingencyRate, 2)  <em>// optional %</em><br>
+    netTotal = subtotal + contingency<br>
+    tax = round(netTotal × taxRate, 2)  <em>// GST 17% Pakistan</em><br>
+    grandTotal = netTotal + tax<br><br>
+    <strong>// With profit margin (for contractor use)</strong><br>
+    profitAmount = round(netTotal × profitMarginRate, 2)<br>
+    grandTotal = netTotal + tax + profitAmount
+  </div>
+
+  <h3>Quantity Dimensions Sub-Calculator</h3>
+  <p>For items like "Excavation in Foundation" the quantity is derived from dimensions. Each item can have child rows (L, W, H, No.) that multiply to produce the quantity. This mirrors how QS textbooks teach it.</p>
+  <div class="formula">
+    <strong>// Dimension rows for one item:</strong><br>
+    Row 1: Foundation Strip   No=4,  L=8.5m,  W=0.6m,  H=1.2m  → 24.48 m³<br>
+    Row 2: Column Pits        No=12, L=1.0m,  W=1.0m,  H=1.5m  → 18.00 m³<br>
+    <strong>Total Quantity = 42.48 m³</strong>
+  </div>
+
+  <h3>Rounding Policy</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">Quantities</div>
+      <div class="card-body">3 decimal places for volumes (m³). 2 decimal places for areas and lengths. 0 decimals for countable items (Nos). User-configurable per unit type.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Currency Amounts</div>
+      <div class="card-body">Always 2 decimal places. Round half-up (Math.round). Never truncate. Store full precision in DB, display rounded. Grand total rounds to nearest 1 PKR.</div>
+    </div>
+  </div>
+
+  <h3>Validation Rules</h3>
+  <div class="callout callout-red">
+    <strong>Silent errors kill trust.</strong> Every validation failure must be visible on the cell — red border, tooltip. Never silently zero-out or auto-correct without telling the user.
+  </div>
+  <div class="grid-2">
+    <div class="card"><div class="card-label">Quantity</div><div class="card-body">Must be ≥ 0. Warn (not error) if 0 — might be intentional placeholder. Cannot be negative. Non-numeric input = instant red border.</div></div>
+    <div class="card"><div class="card-label">Rate</div><div class="card-body">Must be ≥ 0. Warn if 0 or if rate deviates >50% from library rate for same item — possible typo.</div></div>
+    <div class="card"><div class="card-label">Unit</div><div class="card-body">Must be a recognised unit string. Provide dropdown of valid units. Free-text allowed but flagged as custom.</div></div>
+    <div class="card"><div class="card-label">Description</div><div class="card-body">Required field. Warn if item is non-section-header with empty description before export.</div></div>
+  </div>
+</section>
+
+<!-- 09 EXPORT SYSTEM -->
+<section id="export">
+  <div class="section-header">
+    <span class="section-num">Section 09</span>
+    <h2 class="section-title">Export System</h2>
+  </div>
+
+  <h3>PDF Export — Use @react-pdf/renderer</h3>
+  <p><strong>@react-pdf/renderer</strong> runs entirely in the browser process (no server needed). You define your report as React components using its PDF primitives (<code>&lt;Document&gt;</code>, <code>&lt;Page&gt;</code>, <code>&lt;View&gt;</code>, <code>&lt;Text&gt;</code>). It generates a proper vector PDF — not a screenshot. This is critical for professional output.</p>
+
+  <div class="callout callout-green">
+    <strong>Alternative:</strong> If @react-pdf/renderer has performance issues with large BOQs (500+ items), fall back to <strong>Puppeteer</strong> via Tauri sidecar — render an HTML report page headlessly and print to PDF. More setup but handles any complexity.
+  </div>
+
+  <h3>PDF Report Structure</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">Page 1 — Cover</div>
+      <div class="card-body">Company logo top-left. Project name large. Client name. Site address. Date prepared. Revision number. Prepared by (QS name). For (client). Total amount summary box.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Pages 2–N — BOQ Table</div>
+      <div class="card-body">Columns: Item No | Description | Unit | Qty | Rate (PKR) | Amount (PKR). Section headers as full-width shaded rows. Running total in footer. Page number top-right.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Final Page — Summary</div>
+      <div class="card-body">Subtotals by section. Contingency. Net total. GST. Grand total. Signature blocks: Prepared by / Checked by / Approved by.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Appendix (optional)</div>
+      <div class="card-body">Rate analysis page showing material breakdowns for key items. Useful for government tenders.</div>
+    </div>
+  </div>
+
+  <h3>Excel Export — Use SheetJS (xlsx)</h3>
+  <p>SheetJS is the industry standard for browser-side Excel generation. It handles styles, merged cells, formulas, and column widths. The exported file should include actual Excel formulas for Amount (=C×D) so the client can verify calculations in Excel — this builds trust.</p>
+
+  <div class="formula">
+    <strong>SheetJS approach:</strong><br>
+    1. Map boq_items to row array<br>
+    2. Create worksheet with aoa_to_sheet()<br>
+    3. Set column widths, row heights<br>
+    4. Style section header rows (bold, background color)<br>
+    5. Add SUM formulas for subtotals<br>
+    6. Add TOTAL, TAX, GRAND TOTAL rows with borders<br>
+    7. write() → ArrayBuffer → Tauri fs.writeBinaryFile()
+  </div>
+</section>
+
+<!-- 10 AI INTEGRATION -->
+<section id="ai">
+  <div class="section-header">
+    <span class="section-num">Section 10</span>
+    <h2 class="section-title">AI Integration Strategy</h2>
+  </div>
+
+  <div class="callout callout-accent">
+    <strong>Ground rule:</strong> AI features must work without the internet for the MVP target market. Cloud AI APIs are a Phase 3 premium feature. The core product must be 100% functional offline.
+  </div>
+
+  <h3>Realistic MVP AI (Phase 2–3)</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">Smart Description Autocomplete</div>
+      <div class="card-title">Fuzzy search on local rate library</div>
+      <div class="card-body">Not true AI — but feels like it. As user types "brick", show top 5 matching items from rate library with their rates. One Tab key to accept. This is the highest-value "AI feel" with zero complexity.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Rate Anomaly Detection</div>
+      <div class="card-title">Statistical outlier warning</div>
+      <div class="card-body">If user enters a rate that's 3x the library average for that item, show a warning: "This rate seems unusual. Library average: PKR 850/m³." Simple statistics — no model needed.</div>
+    </div>
+  </div>
+
+  <h3>Phase 3 AI — Cloud API (Optional, Premium)</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">AI Item Generation</div>
+      <div class="card-body">User types: "2-bedroom residential house, ground floor slab." AI returns a structured list of BOQ items with quantities, units, and suggested rates. Powered by Claude or GPT-4 API call. User reviews and accepts each item.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Document Extraction</div>
+      <div class="card-body">User uploads a PDF spec sheet or old Excel BOQ. AI extracts items, quantities, and rates into a draft BOQ. Massive time saver for legacy project conversion. Powered by Claude's document understanding.</div>
+    </div>
+  </div>
+
+  <h3>Phase 4 AI — Local LLM with Ollama</h3>
+  <p>For users who cannot or will not send data to the cloud: integrate <strong>Ollama</strong> as a Tauri sidecar process. A small 7B model (Mistral, Llama 3.2) running locally can power item generation and description suggestions entirely offline. Requirements: 8GB RAM, but this is increasingly common. This becomes a strong privacy-first selling point for government and institutional clients.</p>
+
+  <h3>What NOT to Build in AI</h3>
+  <div class="callout callout-red">
+    Do not build drawing recognition/OCR from architectural plans in Phase 1 or 2. This requires training data, computer vision models, and months of engineering. It is 2–3 years of roadmap, not an MVP feature. Mention it in marketing as "coming soon" — do not promise it to users.
+  </div>
+</section>
+
+<!-- 11 MONETIZATION -->
+<section id="monetize">
+  <div class="section-header">
+    <span class="section-num">Section 11</span>
+    <h2 class="section-title">Monetization Strategy</h2>
+  </div>
+
+  <h3>Primary Model: One-Time License (with Annual Update Option)</h3>
+  <div class="callout callout-blue">
+    <strong>Why not subscription?</strong> Pakistani small contractors deeply distrust recurring charges. "I paid for it and now I have to keep paying?" kills the sale instantly. One-time license is psychologically safe. After trust is established (Phase 3), introduce optional annual support contracts for enterprise users.
+  </div>
+
+  <div class="grid-3">
+    <div class="card" style="border-top: 3px solid var(--ink-4);">
+      <div class="card-label">Free / Trial</div>
+      <div class="card-title">3 Projects, Full Features</div>
+      <div class="card-body">Unlimited time. Fully functional. Export works. No feature crippling. Limit is 3 saved projects only. Word-of-mouth spreads when users can show colleagues a real working report.</div>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--accent);">
+      <div class="card-label">Professional — PKR 7,000 (~$25)</div>
+      <div class="card-title">Unlimited Projects</div>
+      <div class="card-body">Unlimited projects. All export types. Rate library. Templates. One-time purchase. 1 year of free updates. Affordable for individual QS or small contractor. No internet required.</div>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--blue);">
+      <div class="card-label">Office — PKR 18,000 (~$65)</div>
+      <div class="card-title">3 Seats + Priority Support</div>
+      <div class="card-body">3 device activations. Priority WhatsApp support. Free major version upgrades. Custom company template setup call. Targets small firms and engineering offices.</div>
+    </div>
+  </div>
+
+  <h3>Revenue Projections (Conservative)</h3>
+  <div class="grid-4">
+    <div class="card">
+      <div class="card-label">Month 6</div>
+      <div class="card-title">50 licenses</div>
+      <div class="card-body">PKR 350,000 (~$1,250)</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Month 12</div>
+      <div class="card-title">200 licenses</div>
+      <div class="card-body">PKR 1.4M (~$5,000)</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Year 2</div>
+      <div class="card-title">800 licenses</div>
+      <div class="card-body">PKR 5.6M (~$20,000)</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Year 3</div>
+      <div class="card-title">2,000+ licenses</div>
+      <div class="card-body">PKR 14M+ (~$50,000)</div>
+    </div>
+  </div>
+
+  <h3>Additional Revenue Streams (Phase 3+)</h3>
+  <p><strong>Premium template packs:</strong> Government tender templates, PHED specification templates, NHA road work templates — PKR 1,500–3,000 each. <strong>City rate database subscriptions:</strong> Monthly Lahore/Karachi/Islamabad rate updates — PKR 500/month. <strong>Training/onboarding:</strong> 1-hour Zoom session — PKR 3,000. <strong>Custom enterprise deployment:</strong> PKR 50,000–200,000 for large contractors or government departments.</p>
+</section>
+
+<!-- 12 GTM -->
+<section id="gtm">
+  <div class="section-header">
+    <span class="section-num">Section 12</span>
+    <h2 class="section-title">Go-To-Market Strategy</h2>
+  </div>
+
+  <h3>Phase 1: Finding the First 50 Users</h3>
+  <div class="callout callout-green">
+    <strong>Your unfair advantage:</strong> You are in Pakistan. You can walk into contractor offices, engineering firms, and quantity surveying consultancies. Do this. Show them a 10-minute demo. Give them the trial. Ask for feedback in exchange for a free license. These first 50 users will become your testimonials, feature advisors, and word-of-mouth ambassadors.
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">Week 1–4</div>
+      <div class="card-title">Direct Outreach</div>
+      <div class="card-body">Join 5 Pakistani construction/civil engineering WhatsApp groups. Post a "I'm building a BOQ tool for Pakistan, looking for beta testers" message. Civil engineering Facebook groups (Pakistan Civil Engineers, Construction Pakistan). LinkedIn outreach to QS professionals.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Month 2–3</div>
+      <div class="card-title">YouTube Demo</div>
+      <div class="card-body">Record a 5-minute Urdu-language demo video: "How I replaced Excel with my own BOQ tool." Show real workflow. Show the before (Excel mess) and after (clean PDF export). Upload to YouTube with SEO title: "Construction BOQ Calculator Pakistan - Free Download". This video will drive organic traffic for years.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Month 3–6</div>
+      <div class="card-title">Template Sharing</div>
+      <div class="card-body">Create and share free BOQ templates: "Free Residential House BOQ Template Pakistan 2025." Give them away as lead magnets. Users who download templates are already doing BOQs — they are your exact customer. Capture email, follow up with tool demo.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Ongoing</div>
+      <div class="card-title">Referral Program</div>
+      <div class="card-body">Existing license holders get 20% commission for every referred sale. Pakistani professionals are highly networked — a good tool spreads through professional circles very fast. Build referral tracking from day one.</div>
+    </div>
+  </div>
+
+  <h3>Key Messaging</h3>
+  <div class="formula">
+    Headline:    "Professional BOQ Reports in Minutes, Not Hours"<br>
+    Sub-line:    "Built for Pakistan. Works without internet. One-time price."<br>
+    Social proof: "Used by 200+ contractors in Lahore, Karachi & Islamabad"<br>
+    CTA:         "Download free — 3 projects, no account required"
+  </div>
+</section>
+
+<!-- 13 RISKS -->
+<section id="risks">
+  <div class="section-header">
+    <span class="section-num">Section 13</span>
+    <h2 class="section-title">Risk Analysis</h2>
+  </div>
+
+  <div class="risk-row">
+    <div class="risk-header"><span class="risk-name">AG Grid Complexity</span><span class="severity sev-high">HIGH</span></div>
+    <div class="risk-body">AG Grid is powerful but has a steep configuration curve. Cell editors, row dragging, section headers, and keyboard navigation all require significant custom code. Underestimating this will double your BOQ screen development time.</div>
+    <div class="risk-mitigation"><strong>Mitigation:</strong> Prototype the BOQ grid before building anything else. Spend 1 week on a standalone AG Grid proof-of-concept with all required behaviors. This de-risks the entire frontend.</div>
+  </div>
+
+  <div class="risk-row">
+    <div class="risk-header"><span class="risk-name">Tauri WebView Inconsistencies</span><span class="severity sev-med">MEDIUM</span></div>
+    <div class="risk-body">Tauri uses OS WebView2 on Windows. Older Windows 10 machines (common in Pakistan) may have outdated WebView2. Rare CSS/JS bugs that don't appear in Chrome.</div>
+    <div class="risk-mitigation"><strong>Mitigation:</strong> Bundle WebView2 installer with your app. Test on Windows 10 1903 virtual machine. Stick to well-supported CSS features. Avoid cutting-edge CSS Grid subgrid, container queries in MVP.</div>
+  </div>
+
+  <div class="risk-row">
+    <div class="risk-header"><span class="risk-name">"Excel is good enough" Objection</span><span class="severity sev-high">HIGH</span></div>
+    <div class="risk-body">The most dangerous adoption barrier is not awareness — it's inertia. The person who has used Excel for 10 years does not feel the pain acutely. They've adapted. Only the report formatting pain point is truly universal and cannot be solved with Excel.</div>
+    <div class="risk-mitigation"><strong>Mitigation:</strong> Lead all marketing with the PDF report quality angle. Show the before/after of report formatting time. Do not lead with "it's better than Excel" — lead with "it produces better reports, faster."</div>
+  </div>
+
+  <div class="risk-row">
+    <div class="risk-header"><span class="risk-name">Piracy</span><span class="severity sev-med">MEDIUM</span></div>
+    <div class="risk-body">Software piracy is common in Pakistan. A cracked version of your tool could circulate freely within weeks of launch.</div>
+    <div class="risk-mitigation"><strong>Mitigation:</strong> Use simple device fingerprint-based license key (not complex DRM — it fails). Price affordably enough that cracking is not worth the effort. Focus on value-adds that require legitimate ownership: updates, support, new templates, community access.</div>
+  </div>
+
+  <div class="risk-row">
+    <div class="risk-header"><span class="risk-name">Scope Creep</span><span class="severity sev-high">HIGH</span></div>
+    <div class="risk-body">As a solo developer, every user request feels urgent. Early users will ask for mobile app, cloud sync, WhatsApp integration, drawing import, and 50 other features. Building all of them kills the product before it launches.</div>
+    <div class="risk-mitigation"><strong>Mitigation:</strong> Maintain a public roadmap on Notion or Trello. Tell users "it's on the roadmap for Phase X." Never promise delivery dates. Build only what moves the core metric: reports produced per day.</div>
+  </div>
+
+  <div class="risk-row">
+    <div class="risk-header"><span class="risk-name">Data Loss Trust Incidents</span><span class="severity sev-high">HIGH</span></div>
+    <div class="risk-body">If a user loses a project due to a bug, they will tell every person in their network. One data loss story on a WhatsApp group can kill months of growth.</div>
+    <div class="risk-mitigation"><strong>Mitigation:</strong> Autosave every 500ms. Create automatic timestamped backup on every export action. Never delete projects — archive them. Build a "recover last session" feature before launch. Treat data integrity as your #1 engineering priority.</div>
+  </div>
+</section>
+
+<!-- 14 ROADMAP -->
+<section id="roadmap">
+  <div class="section-header">
+    <span class="section-num">Section 14</span>
+    <h2 class="section-title">Development Roadmap</h2>
+  </div>
+
+  <div class="phase-block phase-1">
+    <div class="phase-header">Phase 1 — MVP Launch (Weeks 1–12)</div>
+    <div class="phase-body">
+      <div class="grid-2">
+        <div>
+          <p style="font-weight:600; font-size:13px; margin-bottom:8px;">Build</p>
+          <ul>
+            <li>Tauri + React + TypeScript project scaffold</li>
+            <li>SQLite schema migration system</li>
+            <li>Project dashboard (CRUD)</li>
+            <li>BOQ grid (AG Grid) — full keyboard nav</li>
+            <li>Section headers in grid</li>
+            <li>Calculation engine (pure functions)</li>
+            <li>Material rate library (basic)</li>
+            <li>Description autocomplete from rate library</li>
+            <li>PDF export with professional layout</li>
+            <li>Excel export (SheetJS)</li>
+            <li>5 built-in templates</li>
+            <li>Company profile settings</li>
+            <li>Autosave + manual backup</li>
+            <li>Windows installer (NSIS via Tauri)</li>
+          </ul>
+        </div>
+        <div>
+          <p style="font-weight:600; font-size:13px; margin-bottom:8px;">Postpone</p>
+          <ul>
+            <li>Revision system (too complex for launch)</li>
+            <li>Dimension sub-rows (Phase 2)</li>
+            <li>AI features (Phase 3)</li>
+            <li>Cloud sync, user accounts</li>
+            <li>Mobile app</li>
+          </ul>
+          <p style="font-weight:600; font-size:13px; margin-top:1rem; margin-bottom:8px;">Complexity: Medium-High</p>
+          <p style="font-size:13px; color: #6b6b62;">AG Grid configuration is the highest complexity item. Allocate 3 weeks for grid alone. PDF template is 1 week. Everything else is standard CRUD.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-block phase-2">
+    <div class="phase-header">Phase 2 — Stabilisation (Weeks 13–20)</div>
+    <div class="phase-body">
+      <ul>
+        <li>Bug fixes from beta user feedback (expect 50+ issues)</li>
+        <li>Dimension sub-rows for quantity calculation</li>
+        <li>Revision/snapshot system</li>
+        <li>Rate import from Excel (for existing user rate sheets)</li>
+        <li>Print preview screen</li>
+        <li>Keyboard shortcut system (documented)</li>
+        <li>Pakistani city-level rate presets (Lahore, Karachi, ISB, Peshawar)</li>
+        <li>Urdu text support in descriptions</li>
+        <li>License key system (device fingerprint)</li>
+        <li>Payment integration (EasyPaisa/JazzCash API or manual bank transfer)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-block phase-3">
+    <div class="phase-header">Phase 3 — Premium Features (Months 6–12)</div>
+    <div class="phase-body">
+      <ul>
+        <li>AI item generation (Claude/GPT API — internet required, premium feature)</li>
+        <li>BOQ comparison tool (multiple quotes side by side)</li>
+        <li>Rate database subscription (monthly city-level rate updates)</li>
+        <li>Premium template packs (Government tender, PHED, NHA)</li>
+        <li>Report customisation (custom colors, fonts, letterhead upload)</li>
+        <li>Multi-project dashboard with analytics (total value in progress, etc.)</li>
+        <li>macOS build (Tauri makes this straightforward)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-block phase-4">
+    <div class="phase-header">Phase 4 — AI & Platform (Year 2)</div>
+    <div class="phase-body">
+      <ul>
+        <li>Local LLM integration via Ollama (offline AI item generation)</li>
+        <li>PDF document extraction — upload old BOQ PDFs, AI parses them</li>
+        <li>Simple drawing measurement tool (basic area/length from image)</li>
+        <li>API for integration with accounting software (QuickBooks, ERPNext)</li>
+        <li>Team/office features (shared rate library, project handoff)</li>
+        <li>South Asia expansion — India (INR), Bangladesh (BDT) localisations</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 15 FINAL VERDICT -->
+<section id="final">
+  <div class="section-header">
+    <span class="section-num">Section 15</span>
+    <h2 class="section-title">Final Recommendation</h2>
+  </div>
+
+  <div class="big-verdict">Build this.<br>The market gap is real.</div>
+
+  <div class="grid-2" style="margin-top: 2rem;">
+    <div class="verdict-card">
+      <div class="verdict-label">Startup Viability</div>
+      <div class="verdict-value">High. The combination of zero direct competition in the Pakistan market, a clear and painful user problem, and an affordable price point creates an unusually clean opportunity. The risks are real but manageable for a solo technical founder.</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-label">Probability of Success</div>
+      <div class="verdict-value">65–75% of reaching ramen profitability (PKR 200–300K/month) within 18 months, assuming consistent execution and active community presence. Failure modes are almost entirely execution-related, not market-related.</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-label">Biggest Differentiator</div>
+      <div class="verdict-value">Pakistan-specific rate library + offline-first + professional PDF reports + one-time affordable pricing. No other tool offers all four. Any one of these alone is not enough — together they are a strong moat.</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-label">Most Dangerous Mistake</div>
+      <div class="verdict-value">Over-engineering before shipping. The temptation to add revision management, AI features, and cloud sync before launching will kill you. Ship the grid + PDF export + rate library. That is enough to get paying users. Everything else is noise.</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-label">What to Focus on First</div>
+      <div class="verdict-value">Week 1: AG Grid prototype with section headers and keyboard nav. Week 2: SQLite schema and project CRUD. Week 3–4: Calculation engine + rate library. Week 5–6: PDF export. Week 7–8: Polish, installer, beta. That's your 2-month path to a launchable product.</div>
+    </div>
+    <div class="verdict-card">
+      <div class="verdict-label">Ideal MVP Launch Strategy</div>
+      <div class="verdict-value">Give 20 QS professionals a free lifetime license in exchange for video testimonials and WhatsApp referrals. Launch publicly with a free 3-project tier. Record a 5-minute Urdu YouTube demo the first week. Post in 10 construction WhatsApp groups on launch day. Respond personally to every support message for the first 3 months.</div>
+    </div>
+  </div>
+
+  <div class="verdict-card" style="margin-top: 1.5rem; border: 1px solid rgba(212,132,62,0.4);">
+    <div class="verdict-label" style="color: var(--accent-2);">Stack Confirmation</div>
+    <div class="verdict-value">React + TypeScript + Vite + Tailwind (UI) · AG Grid Community (BOQ table) · Tauri v2 (desktop shell) · SQLite via tauri-plugin-sql · Zustand (state) · @react-pdf/renderer (PDF) · SheetJS (Excel) · Zod (validation). This stack is well-supported by AI coding assistants, has excellent documentation, and allows a solo developer to ship a production-quality desktop app without a backend team.</div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('#nav a[href^="#"]');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`#nav a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

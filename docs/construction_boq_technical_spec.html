@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOQ Calculator — Technical Specification</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #21262d;
+  --bg4: #30363d;
+  --border: #30363d;
+  --border2: #484f58;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #6e7681;
+  --accent: #58a6ff;
+  --accent2: #388bfd;
+  --green: #3fb950;
+  --green-bg: #0f2d1a;
+  --amber: #d29922;
+  --amber-bg: #2d1f00;
+  --red: #f85149;
+  --red-bg: #2d0f0f;
+  --purple: #bc8cff;
+  --purple-bg: #1a0d2d;
+  --teal: #39d353;
+  --orange: #e3b341;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* NAV */
+#nav {
+  position: fixed; top: 0; left: 0;
+  width: 240px; height: 100vh;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; z-index: 100;
+  padding-bottom: 2rem;
+}
+#nav .brand {
+  padding: 1rem; border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+#nav .brand .title { font-size: 12px; font-weight: 600; color: var(--text); }
+#nav .brand .sub { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+#nav .section-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text3); padding: 0.75rem 1rem 0.25rem; font-weight: 600;
+}
+#nav a {
+  display: block; padding: 5px 1rem;
+  font-size: 12px; color: var(--text2);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all 0.12s;
+}
+#nav a:hover, #nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(88,166,255,0.05); }
+
+/* MAIN */
+main { margin-left: 240px; }
+
+/* HERO */
+#hero {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 3rem 3rem 2.5rem;
+}
+#hero .tag {
+  display: inline-block; font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; padding: 3px 10px; border-radius: 20px;
+  background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3);
+  color: var(--accent); margin-bottom: 1rem;
+}
+#hero h1 { font-size: 2rem; font-weight: 600; color: var(--text); line-height: 1.2; margin-bottom: 0.75rem; }
+#hero p { color: var(--text2); font-size: 14px; max-width: 600px; }
+#hero .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1.5rem; }
+#hero .pill {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  padding: 4px 10px; border-radius: 4px;
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text2);
+}
+
+/* SECTIONS */
+section {
+  padding: 3rem; border-bottom: 1px solid var(--border);
+  scroll-margin-top: 1rem;
+}
+section:nth-child(odd) { background: var(--bg); }
+section:nth-child(even) { background: #0f1419; }
+
+.sec-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); margin-bottom: 4px; }
+.sec-title { font-size: 1.4rem; font-weight: 600; color: var(--text); }
+.sec-desc { color: var(--text2); font-size: 13px; margin-top: 6px; }
+
+h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text2); margin: 2rem 0 1rem; }
+h3:first-child { margin-top: 0; }
+h4 { font-size: 13px; font-weight: 600; color: var(--text); margin: 1.25rem 0 0.5rem; }
+
+p { color: var(--text2); margin-bottom: 0.75rem; font-size: 13.5px; }
+
+/* CODE */
+pre, .code {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 1.25rem;
+  font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+  line-height: 1.75; overflow-x: auto; margin: 0.75rem 0;
+  color: var(--text);
+}
+.kw { color: #ff7b72; }   /* keyword: interface, type, const, function */
+.ty { color: #79c0ff; }   /* type name */
+.st { color: #a5d6ff; }   /* string */
+.cm { color: #8b949e; }   /* comment */
+.nm { color: #e6edf3; }   /* property name */
+.nu { color: #79c0ff; }   /* number */
+.fn { color: #d2a8ff; }   /* function name */
+.op { color: #ff7b72; }   /* operator */
+
+/* TABLES */
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 0.75rem 0; }
+th { background: var(--bg3); padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text2); border-bottom: 1px solid var(--border); }
+td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+td code, th code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: var(--bg3); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+td strong { color: var(--text); font-weight: 500; }
+
+/* CALLOUTS */
+.callout {
+  border-left: 3px solid; border-radius: 0 6px 6px 0;
+  padding: 1rem 1.25rem; margin: 1rem 0; font-size: 13px;
+}
+.callout-blue { border-color: var(--accent); background: rgba(88,166,255,0.08); color: #a5d6ff; }
+.callout-green { border-color: var(--green); background: var(--green-bg); color: #7ee787; }
+.callout-amber { border-color: var(--amber); background: var(--amber-bg); color: #e3b341; }
+.callout-red { border-color: var(--red); background: var(--red-bg); color: #ffa198; }
+.callout strong { font-weight: 600; }
+
+/* GRIDS */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+
+/* CARDS */
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 1.25rem;
+}
+.card-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+.card-title { font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 6px; }
+.card-body { font-size: 12.5px; color: var(--text2); line-height: 1.6; }
+
+/* BADGES */
+.badge { display: inline-block; font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 7px; border-radius: 3px; margin: 1px; }
+.b-req { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+.b-opt { background: rgba(210,153,34,0.15); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
+.b-skip { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+.b-type { background: rgba(121,192,255,0.1); color: #79c0ff; border: 1px solid rgba(121,192,255,0.2); }
+.b-tauri { background: rgba(188,140,255,0.1); color: var(--purple); border: 1px solid rgba(188,140,255,0.2); }
+
+/* FILE TREE */
+.tree {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+  padding: 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  line-height: 1.9; margin: 0.75rem 0;
+}
+.tree .dir { color: var(--accent); }
+.tree .file { color: var(--text2); }
+.tree .cmt { color: var(--text3); }
+.tree .rust { color: var(--orange); }
+.tree .cfg { color: var(--amber); }
+
+/* COMMAND BLOCK */
+.cmd {
+  background: #000; border: 1px solid var(--border); border-radius: 6px;
+  padding: 1rem 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+  line-height: 1.8; margin: 0.75rem 0;
+}
+.cmd .prompt { color: var(--green); }
+.cmd .arg { color: var(--text); }
+.cmd .comment { color: var(--text3); }
+
+/* SCREEN WIREFRAME */
+.wireframe {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0; overflow: hidden; margin: 1rem 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+}
+.wf-titlebar {
+  background: var(--bg4); padding: 6px 12px;
+  display: flex; align-items: center; gap: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.wf-dot { width: 10px; height: 10px; border-radius: 50%; }
+.wf-titlebar span { color: var(--text3); font-size: 11px; margin-left: auto; }
+.wf-body { padding: 1rem; }
+.wf-toolbar {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 6px 12px; display: flex; gap: 8px; align-items: center;
+}
+.wf-btn {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); padding: 4px 10px; border-radius: 4px; font-size: 11px;
+}
+.wf-btn.primary { background: rgba(88,166,255,0.15); border-color: rgba(88,166,255,0.4); color: var(--accent); }
+.wf-grid-header {
+  display: grid; grid-template-columns: 60px 1fr 70px 90px 100px 110px 80px;
+  background: var(--bg3); border-bottom: 1px solid var(--border);
+  font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.wf-grid-header div, .wf-grid-row div { padding: 6px 8px; }
+.wf-grid-row {
+  display: grid; grid-template-columns: 60px 1fr 70px 90px 100px 110px 80px;
+  border-bottom: 1px solid var(--border); font-size: 11px; color: var(--text2);
+}
+.wf-grid-row:hover { background: rgba(255,255,255,0.03); }
+.wf-section-row {
+  grid-column: 1 / -1; background: rgba(88,166,255,0.08);
+  color: var(--accent); font-weight: 600; font-size: 11px; padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.wf-summary {
+  background: var(--bg2); border-top: 1px solid var(--border);
+  padding: 8px 12px; display: flex; gap: 2rem; justify-content: flex-end;
+  font-size: 11px; color: var(--text2);
+}
+.wf-summary strong { color: var(--text); }
+.wf-sidebar {
+  width: 200px; background: var(--bg2); border-left: 1px solid var(--border);
+  padding: 1rem; font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  #nav { width: 200px; }
+  main { margin-left: 200px; }
+  section { padding: 2rem; }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  #nav { display: none; }
+  main { margin-left: 0; }
+}
+#nav::-webkit-scrollbar { width: 4px; }
+#nav::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="brand">
+    <div class="title">BOQ Calculator</div>
+    <div class="sub">technical-spec v1.0</div>
+  </div>
+  <div class="section-label">Setup</div>
+  <a href="#setup">Project Scaffolding</a>
+  <a href="#packages">Package List</a>
+  <div class="section-label">Architecture</div>
+  <a href="#folder">Folder Structure</a>
+  <a href="#types">TypeScript Types</a>
+  <a href="#store">Zustand Stores</a>
+  <div class="section-label">Database</div>
+  <a href="#migrations">SQL Migrations</a>
+  <a href="#tauri-cmds">Tauri Commands</a>
+  <div class="section-label">UI Screens</div>
+  <a href="#screen-dashboard">Dashboard Screen</a>
+  <a href="#screen-boq">BOQ Editor Screen</a>
+  <a href="#screen-rates">Rate Library Screen</a>
+  <a href="#screen-settings">Settings Screen</a>
+  <div class="section-label">Components</div>
+  <a href="#aggrid">AG Grid Config</a>
+  <a href="#cell-editors">Cell Editors</a>
+  <a href="#context-menu">Context Menu</a>
+  <div class="section-label">Engines</div>
+  <a href="#calc-engine">Calculation Engine</a>
+  <a href="#validation">Validation (Zod)</a>
+  <a href="#export-pdf">PDF Export</a>
+  <a href="#export-excel">Excel Export</a>
+  <div class="section-label">Patterns</div>
+  <a href="#autosave">Autosave Pattern</a>
+  <a href="#errors">Error States</a>
+  <a href="#shortcuts">Keyboard Shortcuts</a>
+  <a href="#prompts">AI Prompt Templates</a>
+</nav>
+
+<main>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="tag">TECHNICAL SPECIFICATION · AI-READY · v1.0</div>
+  <h1>Construction BOQ Calculator<br>Developer Specification</h1>
+  <p>Complete technical contract for AI-assisted development. Contains exact TypeScript interfaces, Zustand store shapes, Tauri IPC commands, AG Grid column definitions, Zod schemas, component specs, and edge case handling. Hand this document directly to Cursor, Claude Code, or Copilot.</p>
+  <div class="pills">
+    <span class="pill">Tauri v2</span>
+    <span class="pill">React 18</span>
+    <span class="pill">TypeScript 5</span>
+    <span class="pill">Vite 5</span>
+    <span class="pill">AG Grid 31</span>
+    <span class="pill">Zustand 4</span>
+    <span class="pill">SQLite</span>
+    <span class="pill">Zod 3</span>
+  </div>
+</div>
+
+<!-- ═══ SECTION 1: SETUP ═══ -->
+<section id="setup">
+  <div class="sec-header">
+    <div class="sec-num">// 01</div>
+    <div class="sec-title">Project Scaffolding</div>
+    <div class="sec-desc">Exact commands to initialise the project from zero. Run in order.</div>
+  </div>
+
+  <h3>1.1 — Create Tauri + React + TypeScript Project</h3>
+  <div class="cmd">
+    <span class="prompt">$ </span><span class="arg">npm create tauri-app@latest boq-calculator</span><br>
+    <span class="comment"># When prompted, select:</span><br>
+    <span class="comment">#   Framework: React</span><br>
+    <span class="comment">#   Language: TypeScript</span><br>
+    <span class="comment">#   Package manager: npm</span><br><br>
+    <span class="prompt">$ </span><span class="arg">cd boq-calculator</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install</span>
+  </div>
+
+  <h3>1.2 — Install Frontend Dependencies</h3>
+  <div class="cmd">
+    <span class="comment"># Core UI</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install tailwindcss @tailwindcss/vite postcss autoprefixer</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install zustand immer</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install zod</span><br><br>
+    <span class="comment"># AG Grid (use Community — free)</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install ag-grid-react ag-grid-community</span><br><br>
+    <span class="comment"># Export</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install @react-pdf/renderer</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install xlsx</span><br><br>
+    <span class="comment"># Utilities</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install date-fns nanoid clsx</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-select @radix-ui/react-tooltip</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install lucide-react</span>
+  </div>
+
+  <h3>1.3 — Install Tauri Plugins</h3>
+  <div class="cmd">
+    <span class="comment"># Rust-side plugins (add to src-tauri/Cargo.toml)</span><br>
+    <span class="prompt">$ </span><span class="arg">cargo add tauri-plugin-sql --features sqlite</span><br>
+    <span class="prompt">$ </span><span class="arg">cargo add tauri-plugin-fs</span><br>
+    <span class="prompt">$ </span><span class="arg">cargo add tauri-plugin-dialog</span><br>
+    <span class="prompt">$ </span><span class="arg">cargo add tauri-plugin-shell</span><br><br>
+    <span class="comment"># Frontend bindings</span><br>
+    <span class="prompt">$ </span><span class="arg">npm install @tauri-apps/plugin-sql @tauri-apps/plugin-fs @tauri-apps/plugin-dialog</span>
+  </div>
+
+  <h3>1.4 — Configure Tailwind</h3>
+  <div class="callout callout-amber">
+    <strong>Use Tailwind v4 with @tailwindcss/vite plugin</strong> — not the PostCSS approach. Add <code>import tailwindcss from '@tailwindcss/vite'</code> to your <code>vite.config.ts</code> plugins array. In your <code>src/index.css</code> add <code>@import "tailwindcss";</code> as the only line.
+  </div>
+
+  <h3>1.5 — src-tauri/tauri.conf.json — Required Permissions</h3>
+  <pre><code>{
+  <span class="st">"plugins"</span>: {
+    <span class="st">"sql"</span>: {
+      <span class="st">"preloadConnections"</span>: [<span class="st">"sqlite:boq.db"</span>]
+    },
+    <span class="st">"fs"</span>: {
+      <span class="st">"scope"</span>: [<span class="st">"$APPDATA/*"</span>, <span class="st">"$DOCUMENT/*"</span>, <span class="st">"$DESKTOP/*"</span>]
+    }
+  },
+  <span class="st">"app"</span>: {
+    <span class="st">"windows"</span>: [{
+      <span class="st">"title"</span>: <span class="st">"BOQ Calculator"</span>,
+      <span class="st">"width"</span>: <span class="nu">1280</span>,
+      <span class="st">"height"</span>: <span class="nu">800</span>,
+      <span class="st">"minWidth"</span>: <span class="nu">900</span>,
+      <span class="st">"minHeight"</span>: <span class="nu">600</span>,
+      <span class="st">"resizable"</span>: <span class="kw">true</span>
+    }]
+  }
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 2: PACKAGES ═══ -->
+<section id="packages">
+  <div class="sec-header">
+    <div class="sec-num">// 02</div>
+    <div class="sec-title">Package Reference</div>
+    <div class="sec-desc">Every package, its version, and its exact role.</div>
+  </div>
+
+  <table>
+    <thead><tr><th>Package</th><th>Version</th><th>Role</th><th>Required?</th></tr></thead>
+    <tbody>
+      <tr><td><code>ag-grid-react</code></td><td>^31.x</td><td>BOQ spreadsheet grid — the core UI</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>ag-grid-community</code></td><td>^31.x</td><td>AG Grid engine (free community edition)</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>zustand</code></td><td>^4.x</td><td>State management for all stores</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>immer</code></td><td>^10.x</td><td>Immutable state helpers for Zustand</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>zod</code></td><td>^3.x</td><td>Runtime validation for all data inputs</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>@react-pdf/renderer</code></td><td>^3.x</td><td>PDF generation (client-side, no server)</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>xlsx</code></td><td>^0.18.x</td><td>Excel .xlsx generation</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>@tauri-apps/plugin-sql</code></td><td>^2.x</td><td>SQLite access via Tauri IPC</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>@tauri-apps/plugin-fs</code></td><td>^2.x</td><td>File read/write for backup/export</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>@tauri-apps/plugin-dialog</code></td><td>^2.x</td><td>Native save/open file dialogs</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>date-fns</code></td><td>^3.x</td><td>Date formatting for reports and timestamps</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>nanoid</code></td><td>^5.x</td><td>Generate unique IDs for unsaved rows</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>clsx</code></td><td>^2.x</td><td>Conditional className builder</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>lucide-react</code></td><td>^0.3x</td><td>Icon library</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>@radix-ui/react-dialog</code></td><td>^1.x</td><td>Accessible modal dialogs</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>@radix-ui/react-dropdown-menu</code></td><td>^2.x</td><td>Context menu and dropdowns</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>@radix-ui/react-select</code></td><td>^2.x</td><td>Unit selector dropdown in grid</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+      <tr><td><code>@radix-ui/react-tooltip</code></td><td>^1.x</td><td>Validation error tooltips</td><td><span class="badge b-req">REQUIRED</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-amber">
+    <strong>AG Grid Community vs Enterprise:</strong> Community edition is free forever. Enterprise adds row grouping, pivot, and charts — not needed for MVP. Do NOT install <code>ag-grid-enterprise</code>. The context menu feature we need can be replicated with a custom Radix dropdown.
+  </div>
+</section>
+
+<!-- ═══ SECTION 3: FOLDER STRUCTURE ═══ -->
+<section id="folder">
+  <div class="sec-header">
+    <div class="sec-num">// 03</div>
+    <div class="sec-title">Folder Structure</div>
+    <div class="sec-desc">Complete project layout. Every folder has a defined purpose. Do not deviate.</div>
+  </div>
+
+  <div class="tree">
+<span class="dir">boq-calculator/</span><br>
+├── <span class="cfg">package.json</span><br>
+├── <span class="cfg">vite.config.ts</span><br>
+├── <span class="cfg">tsconfig.json</span><br>
+├── <span class="dir">src/</span>                              <span class="cmt"># Frontend (React)</span><br>
+│   ├── <span class="file">main.tsx</span>                       <span class="cmt"># React root, router setup</span><br>
+│   ├── <span class="file">App.tsx</span>                        <span class="cmt"># Root component with routes</span><br>
+│   ├── <span class="file">index.css</span>                      <span class="cmt"># @import "tailwindcss"; only</span><br>
+│   │<br>
+│   ├── <span class="dir">features/</span>                      <span class="cmt"># Feature modules (domain-driven)</span><br>
+│   │   ├── <span class="dir">projects/</span><br>
+│   │   │   ├── <span class="file">ProjectsDashboard.tsx</span>      <span class="cmt"># /projects route</span><br>
+│   │   │   ├── <span class="file">ProjectCard.tsx</span><br>
+│   │   │   ├── <span class="file">NewProjectDialog.tsx</span><br>
+│   │   │   ├── <span class="file">EditProjectDialog.tsx</span><br>
+│   │   │   └── <span class="file">useProjects.ts</span>             <span class="cmt"># DB queries for projects</span><br>
+│   │   │<br>
+│   │   ├── <span class="dir">boq/</span><br>
+│   │   │   ├── <span class="file">BoqEditor.tsx</span>              <span class="cmt"># /projects/:id/boq route</span><br>
+│   │   │   ├── <span class="file">BoqGrid.tsx</span>                <span class="cmt"># AG Grid wrapper</span><br>
+│   │   │   ├── <span class="file">BoqToolbar.tsx</span>             <span class="cmt"># Add row, add section, delete, export</span><br>
+│   │   │   ├── <span class="file">BoqSummaryPanel.tsx</span>        <span class="cmt"># Right panel: subtotals, total, tax</span><br>
+│   │   │   ├── <span class="file">BoqContextMenu.tsx</span>         <span class="cmt"># Right-click menu</span><br>
+│   │   │   ├── <span class="file">columnDefs.ts</span>              <span class="cmt"># AG Grid column definitions (CRITICAL)</span><br>
+│   │   │   ├── <span class="dir">cellEditors/</span><br>
+│   │   │   │   ├── <span class="file">DescriptionEditor.tsx</span>  <span class="cmt"># With autocomplete</span><br>
+│   │   │   │   ├── <span class="file">UnitEditor.tsx</span>         <span class="cmt"># Dropdown select</span><br>
+│   │   │   │   ├── <span class="file">NumericEditor.tsx</span>      <span class="cmt"># For qty and rate</span><br>
+│   │   │   │   └── <span class="file">index.ts</span><br>
+│   │   │   └── <span class="file">useBoqStore.ts</span>             <span class="cmt"># Zustand store (re-export)</span><br>
+│   │   │<br>
+│   │   ├── <span class="dir">rates/</span><br>
+│   │   │   ├── <span class="file">RateLibrary.tsx</span>            <span class="cmt"># /rates route</span><br>
+│   │   │   ├── <span class="file">RateTable.tsx</span><br>
+│   │   │   ├── <span class="file">AddRateDialog.tsx</span><br>
+│   │   │   └── <span class="file">useRates.ts</span><br>
+│   │   │<br>
+│   │   ├── <span class="dir">templates/</span><br>
+│   │   │   ├── <span class="file">TemplateLibrary.tsx</span>        <span class="cmt"># /templates route</span><br>
+│   │   │   ├── <span class="file">TemplateCard.tsx</span><br>
+│   │   │   └── <span class="file">useTemplates.ts</span><br>
+│   │   │<br>
+│   │   ├── <span class="dir">export/</span><br>
+│   │   │   ├── <span class="file">PdfDocument.tsx</span>            <span class="cmt"># @react-pdf/renderer template</span><br>
+│   │   │   ├── <span class="file">PdfPreview.tsx</span>             <span class="cmt"># Preview modal</span><br>
+│   │   │   ├── <span class="file">exportPdf.ts</span>               <span class="cmt"># Export function</span><br>
+│   │   │   └── <span class="file">exportExcel.ts</span>             <span class="cmt"># SheetJS export function</span><br>
+│   │   │<br>
+│   │   └── <span class="dir">settings/</span><br>
+│   │       ├── <span class="file">SettingsPage.tsx</span>           <span class="cmt"># /settings route</span><br>
+│   │       └── <span class="file">useSettings.ts</span><br>
+│   │<br>
+│   ├── <span class="dir">lib/</span>                           <span class="cmt"># Pure logic — no React, no side effects</span><br>
+│   │   ├── <span class="file">db.ts</span>                      <span class="cmt"># Tauri SQL plugin singleton + typed queries</span><br>
+│   │   ├── <span class="file">calculator.ts</span>              <span class="cmt"># All calculation functions (pure)</span><br>
+│   │   ├── <span class="file">validator.ts</span>               <span class="cmt"># Zod schemas + validation helpers</span><br>
+│   │   ├── <span class="file">formatter.ts</span>               <span class="cmt"># PKR formatting, number display</span><br>
+│   │   ├── <span class="file">constants.ts</span>               <span class="cmt"># UNITS, CATEGORIES, DEFAULT_TAX_RATE</span><br>
+│   │   └── <span class="file">migrations.ts</span>              <span class="cmt"># SQL migration runner</span><br>
+│   │<br>
+│   ├── <span class="dir">store/</span>                         <span class="cmt"># Zustand stores</span><br>
+│   │   ├── <span class="file">projectStore.ts</span><br>
+│   │   ├── <span class="file">boqStore.ts</span><br>
+│   │   ├── <span class="file">rateStore.ts</span><br>
+│   │   └── <span class="file">settingsStore.ts</span><br>
+│   │<br>
+│   ├── <span class="dir">components/</span>                    <span class="cmt"># Shared, reusable UI atoms</span><br>
+│   │   ├── <span class="file">Button.tsx</span><br>
+│   │   ├── <span class="file">Input.tsx</span><br>
+│   │   ├── <span class="file">Modal.tsx</span>                  <span class="cmt"># Wraps Radix Dialog</span><br>
+│   │   ├── <span class="file">Badge.tsx</span><br>
+│   │   ├── <span class="file">Spinner.tsx</span><br>
+│   │   ├── <span class="file">EmptyState.tsx</span><br>
+│   │   └── <span class="file">Layout.tsx</span>                 <span class="cmt"># App shell: sidebar + main area</span><br>
+│   │<br>
+│   └── <span class="dir">types/</span>                         <span class="cmt"># Global TypeScript types</span><br>
+│       ├── <span class="file">domain.ts</span>                  <span class="cmt"># Project, BoqItem, Rate, etc.</span><br>
+│       └── <span class="file">db.ts</span>                      <span class="cmt"># DB row types (snake_case from SQLite)</span><br>
+│<br>
+└── <span class="dir">src-tauri/</span>                         <span class="cmt"># Rust / Tauri backend</span><br>
+    ├── <span class="rust">src/main.rs</span>                    <span class="cmt"># Tauri app + plugin registration</span><br>
+    ├── <span class="rust">src/commands.rs</span>                <span class="cmt"># Custom Tauri invoke commands</span><br>
+    ├── <span class="cfg">Cargo.toml</span><br>
+    └── <span class="cfg">tauri.conf.json</span>
+  </div>
+</section>
+
+<!-- ═══ SECTION 4: TYPESCRIPT TYPES ═══ -->
+<section id="types">
+  <div class="sec-header">
+    <div class="sec-num">// 04</div>
+    <div class="sec-title">TypeScript Type Definitions</div>
+    <div class="sec-desc">Complete domain types. File: <code>src/types/domain.ts</code>. These are the source of truth for all data shapes.</div>
+  </div>
+
+  <pre><code><span class="cm">// ─── src/types/domain.ts ─────────────────────────────────────</span>
+
+<span class="cm">// ── Project ──────────────────────────────────────────────────</span>
+<span class="kw">export type</span> <span class="ty">ProjectStatus</span> = <span class="st">'draft'</span> | <span class="st">'submitted'</span> | <span class="st">'awarded'</span> | <span class="st">'archived'</span>
+
+<span class="kw">export type</span> <span class="ty">ProjectType</span> =
+  | <span class="st">'residential'</span>
+  | <span class="st">'commercial'</span>
+  | <span class="st">'industrial'</span>
+  | <span class="st">'infrastructure'</span>
+  | <span class="st">'renovation'</span>
+  | <span class="st">'other'</span>
+
+<span class="kw">export interface</span> <span class="ty">Project</span> {
+  <span class="nm">id</span>: <span class="kw">number</span>
+  <span class="nm">name</span>: <span class="kw">string</span>
+  <span class="nm">clientName</span>: <span class="kw">string</span>
+  <span class="nm">siteAddress</span>: <span class="kw">string</span>
+  <span class="nm">projectType</span>: <span class="ty">ProjectType</span>
+  <span class="nm">status</span>: <span class="ty">ProjectStatus</span>
+  <span class="nm">currency</span>: <span class="kw">string</span>            <span class="cm">// 'PKR' default</span>
+  <span class="nm">taxRate</span>: <span class="kw">number</span>             <span class="cm">// 0.17 = 17% GST</span>
+  <span class="nm">contingencyRate</span>: <span class="kw">number</span>    <span class="cm">// 0.05 = 5% contingency, 0 = none</span>
+  <span class="nm">profitMarginRate</span>: <span class="kw">number</span>   <span class="cm">// 0.10 = 10% profit, 0 = none</span>
+  <span class="nm">notes</span>: <span class="kw">string</span>
+  <span class="nm">createdAt</span>: <span class="kw">string</span>           <span class="cm">// ISO datetime string</span>
+  <span class="nm">updatedAt</span>: <span class="kw">string</span>
+}
+
+<span class="kw">export type</span> <span class="ty">CreateProjectInput</span> = <span class="ty">Omit</span>&lt;<span class="ty">Project</span>, <span class="st">'id'</span> | <span class="st">'createdAt'</span> | <span class="st">'updatedAt'</span>&gt;
+
+<span class="cm">// ── BOQ Item ──────────────────────────────────────────────────</span>
+<span class="kw">export interface</span> <span class="ty">BoqItem</span> {
+  <span class="nm">id</span>: <span class="kw">number</span> | <span class="kw">string</span>        <span class="cm">// number when saved, nanoid string when new/unsaved</span>
+  <span class="nm">projectId</span>: <span class="kw">number</span>
+  <span class="nm">revisionId</span>: <span class="kw">number</span> | <span class="kw">null</span>  <span class="cm">// null = current working copy</span>
+  <span class="nm">itemNo</span>: <span class="kw">string</span>              <span class="cm">// '1', '1.1', 'A', etc.</span>
+  <span class="nm">description</span>: <span class="kw">string</span>
+  <span class="nm">unit</span>: <span class="kw">string</span>                <span class="cm">// from VALID_UNITS constant</span>
+  <span class="nm">quantity</span>: <span class="kw">number</span>
+  <span class="nm">rate</span>: <span class="kw">number</span>                <span class="cm">// PKR per unit</span>
+  <span class="nm">amount</span>: <span class="kw">number</span>              <span class="cm">// computed: quantity × rate</span>
+  <span class="nm">isSectionHeader</span>: <span class="kw">boolean</span>
+  <span class="nm">sortOrder</span>: <span class="kw">number</span>
+  <span class="nm">materialId</span>: <span class="kw">number</span> | <span class="kw">null</span>  <span class="cm">// FK to rates table</span>
+  <span class="nm">notes</span>: <span class="kw">string</span>
+  <span class="nm">_isDirty</span>: <span class="kw">boolean</span>           <span class="cm">// unsaved changes flag (frontend only, not in DB)</span>
+  <span class="nm">_hasError</span>: <span class="kw">boolean</span>          <span class="cm">// validation error flag (frontend only)</span>
+  <span class="nm">_errorMessage</span>: <span class="kw">string</span>      <span class="cm">// (frontend only)</span>
+}
+
+<span class="cm">// ── Rate (Material Library entry) ────────────────────────────</span>
+<span class="kw">export interface</span> <span class="ty">Rate</span> {
+  <span class="nm">id</span>: <span class="kw">number</span>
+  <span class="nm">name</span>: <span class="kw">string</span>
+  <span class="nm">category</span>: <span class="ty">RateCategory</span>
+  <span class="nm">unit</span>: <span class="kw">string</span>
+  <span class="nm">rate</span>: <span class="kw">number</span>
+  <span class="nm">city</span>: <span class="ty">PakistanCity</span> | <span class="kw">null</span>   <span class="cm">// null = national average</span>
+  <span class="nm">lastUpdated</span>: <span class="kw">string</span>
+  <span class="nm">isSystem</span>: <span class="kw">boolean</span>           <span class="cm">// built-in vs user-added</span>
+}
+
+<span class="kw">export type</span> <span class="ty">RateCategory</span> =
+  | <span class="st">'civil'</span>
+  | <span class="st">'earthwork'</span>
+  | <span class="st">'concrete'</span>
+  | <span class="st">'masonry'</span>
+  | <span class="st">'steel'</span>
+  | <span class="st">'finishing'</span>
+  | <span class="st">'mep'</span>
+  | <span class="st">'roofing'</span>
+  | <span class="st">'flooring'</span>
+  | <span class="st">'doors_windows'</span>
+  | <span class="st">'painting'</span>
+  | <span class="st">'labour'</span>
+  | <span class="st">'other'</span>
+
+<span class="kw">export type</span> <span class="ty">PakistanCity</span> =
+  | <span class="st">'lahore'</span>
+  | <span class="st">'karachi'</span>
+  | <span class="st">'islamabad'</span>
+  | <span class="st">'peshawar'</span>
+  | <span class="st">'quetta'</span>
+  | <span class="st">'faisalabad'</span>
+  | <span class="st">'multan'</span>
+
+<span class="cm">// ── Calculated Totals (computed, never stored) ───────────────</span>
+<span class="kw">export interface</span> <span class="ty">BoqTotals</span> {
+  <span class="nm">sections</span>: { <span class="nm">label</span>: <span class="kw">string</span>; <span class="nm">subtotal</span>: <span class="kw">number</span> }[]
+  <span class="nm">subtotal</span>: <span class="kw">number</span>
+  <span class="nm">contingencyAmount</span>: <span class="kw">number</span>
+  <span class="nm">netTotal</span>: <span class="kw">number</span>
+  <span class="nm">taxAmount</span>: <span class="kw">number</span>
+  <span class="nm">profitAmount</span>: <span class="kw">number</span>
+  <span class="nm">grandTotal</span>: <span class="kw">number</span>
+}
+
+<span class="cm">// ── Settings ──────────────────────────────────────────────────</span>
+<span class="kw">export interface</span> <span class="ty">AppSettings</span> {
+  <span class="nm">companyName</span>: <span class="kw">string</span>
+  <span class="nm">companyAddress</span>: <span class="kw">string</span>
+  <span class="nm">companyPhone</span>: <span class="kw">string</span>
+  <span class="nm">companyEmail</span>: <span class="kw">string</span>
+  <span class="nm">logoPath</span>: <span class="kw">string</span> | <span class="kw">null</span>
+  <span class="nm">defaultTaxRate</span>: <span class="kw">number</span>          <span class="cm">// 0.17</span>
+  <span class="nm">defaultCity</span>: <span class="ty">PakistanCity</span> | <span class="kw">null</span>
+  <span class="nm">backupFolderPath</span>: <span class="kw">string</span> | <span class="kw">null</span>
+  <span class="nm">autoBackupOnExport</span>: <span class="kw">boolean</span>
+}
+
+<span class="cm">// ── Template ──────────────────────────────────────────────────</span>
+<span class="kw">export interface</span> <span class="ty">Template</span> {
+  <span class="nm">id</span>: <span class="kw">number</span>
+  <span class="nm">name</span>: <span class="kw">string</span>
+  <span class="nm">description</span>: <span class="kw">string</span>
+  <span class="nm">projectType</span>: <span class="ty">ProjectType</span>
+  <span class="nm">isSystem</span>: <span class="kw">boolean</span>
+  <span class="nm">createdAt</span>: <span class="kw">string</span>
+  <span class="nm">items</span>: <span class="ty">Omit</span>&lt;<span class="ty">BoqItem</span>, <span class="st">'id'</span> | <span class="st">'projectId'</span> | <span class="st">'revisionId'</span> | <span class="st">'_isDirty'</span> | <span class="st">'_hasError'</span> | <span class="st">'_errorMessage'</span>&gt;[]
+}</code></pre>
+
+  <h3>4.1 — Constants</h3>
+  <pre><code><span class="cm">// ─── src/lib/constants.ts ─────────────────────────────────────</span>
+
+<span class="kw">export const</span> <span class="nm">VALID_UNITS</span> = [
+  <span class="st">'m³'</span>, <span class="st">'m²'</span>, <span class="st">'m'</span>, <span class="st">'Rft'</span>, <span class="st">'Sft'</span>,
+  <span class="st">'Nos'</span>, <span class="st">'Kg'</span>, <span class="st">'Ton'</span>, <span class="st">'Bag'</span>,
+  <span class="st">'LS'</span>,    <span class="cm">// Lump Sum</span>
+  <span class="st">'Day'</span>, <span class="st">'Week'</span>, <span class="st">'Month'</span>,
+  <span class="st">'Set'</span>, <span class="st">'Pair'</span>, <span class="st">'Box'</span>
+] <span class="kw">as const</span>
+
+<span class="kw">export const</span> <span class="nm">DEFAULT_TAX_RATE</span> = <span class="nu">0.17</span>    <span class="cm">// Pakistan GST 17%</span>
+<span class="kw">export const</span> <span class="nm">AUTOSAVE_DELAY_MS</span> = <span class="nu">500</span>
+<span class="kw">export const</span> <span class="nm">RATE_WARNING_THRESHOLD</span> = <span class="nu">0.5</span>  <span class="cm">// warn if rate deviates >50% from library</span>
+
+<span class="kw">export const</span> <span class="nm">RATE_CATEGORY_LABELS</span>: <span class="ty">Record</span>&lt;<span class="ty">RateCategory</span>, <span class="kw">string</span>&gt; = {
+  <span class="nm">civil</span>: <span class="st">'Civil Works'</span>,
+  <span class="nm">earthwork</span>: <span class="st">'Earthwork'</span>,
+  <span class="nm">concrete</span>: <span class="st">'Concrete Works'</span>,
+  <span class="nm">masonry</span>: <span class="st">'Masonry'</span>,
+  <span class="nm">steel</span>: <span class="st">'Steel & Ironmongery'</span>,
+  <span class="nm">finishing</span>: <span class="st">'Finishing Works'</span>,
+  <span class="nm">mep</span>: <span class="st">'Mechanical / Electrical / Plumbing'</span>,
+  <span class="nm">roofing</span>: <span class="st">'Roofing'</span>,
+  <span class="nm">flooring</span>: <span class="st">'Flooring & Tiling'</span>,
+  <span class="nm">doors_windows</span>: <span class="st">'Doors & Windows'</span>,
+  <span class="nm">painting</span>: <span class="st">'Painting & Decoration'</span>,
+  <span class="nm">labour</span>: <span class="st">'Labour Charges'</span>,
+  <span class="nm">other</span>: <span class="st">'Other'</span>,
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 5: ZUSTAND STORES ═══ -->
+<section id="store">
+  <div class="sec-header">
+    <div class="sec-num">// 05</div>
+    <div class="sec-title">Zustand Store Definitions</div>
+    <div class="sec-desc">Exact store shapes and action signatures. All stores use Immer for immutable updates.</div>
+  </div>
+
+  <h3>5.1 — boqStore (Most Critical)</h3>
+  <pre><code><span class="cm">// ─── src/store/boqStore.ts ────────────────────────────────────</span>
+<span class="kw">import</span> { <span class="nm">create</span> } <span class="kw">from</span> <span class="st">'zustand'</span>
+<span class="kw">import</span> { <span class="nm">immer</span> } <span class="kw">from</span> <span class="st">'zustand/middleware/immer'</span>
+
+<span class="kw">interface</span> <span class="ty">BoqState</span> {
+  <span class="cm">// ── Data ──────────────────────────────────────────────</span>
+  <span class="nm">currentProjectId</span>: <span class="kw">number</span> | <span class="kw">null</span>
+  <span class="nm">items</span>: <span class="ty">BoqItem</span>[]              <span class="cm">// in-memory working copy, sorted by sortOrder</span>
+  <span class="nm">totals</span>: <span class="ty">BoqTotals</span> | <span class="kw">null</span>     <span class="cm">// recomputed whenever items change</span>
+
+  <span class="cm">// ── UI State ──────────────────────────────────────────</span>
+  <span class="nm">isLoading</span>: <span class="kw">boolean</span>
+  <span class="nm">isSaving</span>: <span class="kw">boolean</span>            <span class="cm">// true during DB write</span>
+  <span class="nm">lastSavedAt</span>: <span class="ty">Date</span> | <span class="kw">null</span>
+  <span class="nm">selectedRowIds</span>: (<span class="kw">number</span> | <span class="kw">string</span>)[]
+  <span class="nm">saveError</span>: <span class="kw">string</span> | <span class="kw">null</span>
+
+  <span class="cm">// ── Actions ───────────────────────────────────────────</span>
+  <span class="fn">loadProject</span>: (<span class="nm">projectId</span>: <span class="kw">number</span>) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">addItem</span>: (<span class="nm">afterId</span>?: <span class="kw">number</span> | <span class="kw">string</span>) =&gt; <span class="kw">void</span>   <span class="cm">// adds blank row, triggers autosave</span>
+  <span class="fn">addSectionHeader</span>: (<span class="nm">afterId</span>?: <span class="kw">number</span> | <span class="kw">string</span>) =&gt; <span class="kw">void</span>
+  <span class="fn">updateItem</span>: (<span class="nm">id</span>: <span class="kw">number</span> | <span class="kw">string</span>, <span class="nm">changes</span>: <span class="ty">Partial</span>&lt;<span class="ty">BoqItem</span>&gt;) =&gt; <span class="kw">void</span>
+  <span class="fn">deleteItems</span>: (<span class="nm">ids</span>: (<span class="kw">number</span> | <span class="kw">string</span>)[]) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">duplicateItem</span>: (<span class="nm">id</span>: <span class="kw">number</span> | <span class="kw">string</span>) =&gt; <span class="kw">void</span>
+  <span class="fn">reorderItems</span>: (<span class="nm">newOrder</span>: (<span class="kw">number</span> | <span class="kw">string</span>)[]) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">applyTemplate</span>: (<span class="nm">template</span>: <span class="ty">Template</span>, <span class="nm">mode</span>: <span class="st">'replace'</span> | <span class="st">'append'</span>) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">forceSave</span>: () =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;  <span class="cm">// called on Ctrl+S and before export</span>
+  <span class="fn">recalcTotals</span>: () =&gt; <span class="kw">void</span>        <span class="cm">// called after any item change</span>
+}
+
+<span class="kw">export const</span> <span class="nm">useBoqStore</span> = <span class="fn">create</span>&lt;<span class="ty">BoqState</span>&gt;()(<span class="fn">immer</span>((<span class="nm">set</span>, <span class="nm">get</span>) =&gt; ({
+  <span class="nm">currentProjectId</span>: <span class="kw">null</span>,
+  <span class="nm">items</span>: [],
+  <span class="nm">totals</span>: <span class="kw">null</span>,
+  <span class="nm">isLoading</span>: <span class="kw">false</span>,
+  <span class="nm">isSaving</span>: <span class="kw">false</span>,
+  <span class="nm">lastSavedAt</span>: <span class="kw">null</span>,
+  <span class="nm">selectedRowIds</span>: [],
+  <span class="nm">saveError</span>: <span class="kw">null</span>,
+  <span class="cm">// ... implementations</span>
+})))</code></pre>
+
+  <h3>5.2 — projectStore</h3>
+  <pre><code><span class="kw">interface</span> <span class="ty">ProjectState</span> {
+  <span class="nm">projects</span>: <span class="ty">Project</span>[]
+  <span class="nm">isLoading</span>: <span class="kw">boolean</span>
+  <span class="nm">searchQuery</span>: <span class="kw">string</span>
+  <span class="nm">statusFilter</span>: <span class="ty">ProjectStatus</span> | <span class="st">'all'</span>
+
+  <span class="fn">loadAll</span>: () =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">createProject</span>: (<span class="nm">input</span>: <span class="ty">CreateProjectInput</span>) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">number</span>&gt;    <span class="cm">// returns new id</span>
+  <span class="fn">updateProject</span>: (<span class="nm">id</span>: <span class="kw">number</span>, <span class="nm">changes</span>: <span class="ty">Partial</span>&lt;<span class="ty">Project</span>&gt;) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">archiveProject</span>: (<span class="nm">id</span>: <span class="kw">number</span>) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;              <span class="cm">// sets status='archived', never deletes</span>
+  <span class="fn">setSearchQuery</span>: (<span class="nm">q</span>: <span class="kw">string</span>) =&gt; <span class="kw">void</span>
+  <span class="fn">setStatusFilter</span>: (<span class="nm">f</span>: <span class="ty">ProjectStatus</span> | <span class="st">'all'</span>) =&gt; <span class="kw">void</span>
+  <span class="nm">filteredProjects</span>: <span class="ty">Project</span>[]    <span class="cm">// derived — filter applied in selector</span>
+}</code></pre>
+
+  <h3>5.3 — rateStore</h3>
+  <pre><code><span class="kw">interface</span> <span class="ty">RateState</span> {
+  <span class="nm">rates</span>: <span class="ty">Rate</span>[]
+  <span class="nm">isLoading</span>: <span class="kw">boolean</span>
+  <span class="nm">searchQuery</span>: <span class="kw">string</span>
+  <span class="nm">categoryFilter</span>: <span class="ty">RateCategory</span> | <span class="st">'all'</span>
+  <span class="nm">cityFilter</span>: <span class="ty">PakistanCity</span> | <span class="st">'national'</span>
+
+  <span class="fn">loadAll</span>: () =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">addRate</span>: (<span class="nm">input</span>: <span class="ty">Omit</span>&lt;<span class="ty">Rate</span>, <span class="st">'id'</span> | <span class="st">'isSystem'</span>&gt;) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">updateRate</span>: (<span class="nm">id</span>: <span class="kw">number</span>, <span class="nm">changes</span>: <span class="ty">Partial</span>&lt;<span class="ty">Rate</span>&gt;) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">deleteRate</span>: (<span class="nm">id</span>: <span class="kw">number</span>) =&gt; <span class="ty">Promise</span>&lt;<span class="kw">void</span>&gt;
+  <span class="fn">searchRates</span>: (<span class="nm">query</span>: <span class="kw">string</span>, <span class="nm">limit</span>?: <span class="kw">number</span>) =&gt; <span class="ty">Rate</span>[]  <span class="cm">// for autocomplete</span>
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 6: SQL MIGRATIONS ═══ -->
+<section id="migrations">
+  <div class="sec-header">
+    <div class="sec-num">// 06</div>
+    <div class="sec-title">SQL Migrations</div>
+    <div class="sec-desc">Complete CREATE TABLE statements. Run via migration runner in <code>src/lib/migrations.ts</code> on app startup.</div>
+  </div>
+
+  <pre><code><span class="cm">-- migration_001_initial_schema.sql</span>
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> <span class="ty">projects</span> (
+  <span class="nm">id</span>               <span class="ty">INTEGER</span> <span class="kw">PRIMARY KEY AUTOINCREMENT</span>,
+  <span class="nm">name</span>             <span class="ty">TEXT</span> <span class="kw">NOT NULL</span>,
+  <span class="nm">client_name</span>      <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">''</span>,
+  <span class="nm">site_address</span>     <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">''</span>,
+  <span class="nm">project_type</span>     <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">'residential'</span>,
+  <span class="nm">status</span>           <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">'draft'</span>,
+  <span class="nm">currency</span>         <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">'PKR'</span>,
+  <span class="nm">tax_rate</span>         <span class="ty">REAL</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0.17</span>,
+  <span class="nm">contingency_rate</span> <span class="ty">REAL</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0.0</span>,
+  <span class="nm">profit_margin_rate</span> <span class="ty">REAL</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0.0</span>,
+  <span class="nm">notes</span>            <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">''</span>,
+  <span class="nm">created_at</span>       <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> (<span class="fn">datetime</span>(<span class="st">'now'</span>)),
+  <span class="nm">updated_at</span>       <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> (<span class="fn">datetime</span>(<span class="st">'now'</span>))
+);
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> <span class="ty">boq_items</span> (
+  <span class="nm">id</span>                <span class="ty">INTEGER</span> <span class="kw">PRIMARY KEY AUTOINCREMENT</span>,
+  <span class="nm">project_id</span>        <span class="ty">INTEGER</span> <span class="kw">NOT NULL REFERENCES</span> <span class="ty">projects</span>(<span class="nm">id</span>) <span class="kw">ON DELETE CASCADE</span>,
+  <span class="nm">revision_id</span>       <span class="ty">INTEGER</span> <span class="kw">REFERENCES</span> <span class="ty">revisions</span>(<span class="nm">id</span>) <span class="kw">ON DELETE SET NULL</span>,
+  <span class="nm">item_no</span>           <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">''</span>,
+  <span class="nm">description</span>       <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">''</span>,
+  <span class="nm">unit</span>              <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">'m³'</span>,
+  <span class="nm">quantity</span>          <span class="ty">REAL</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0</span>,
+  <span class="nm">rate</span>              <span class="ty">REAL</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0</span>,
+  <span class="nm">amount</span>            <span class="ty">REAL</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0</span>,  <span class="cm">-- stored for fast reads</span>
+  <span class="nm">is_section_header</span> <span class="ty">INTEGER</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0</span>, <span class="cm">-- 1=true, 0=false</span>
+  <span class="nm">sort_order</span>        <span class="ty">INTEGER</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0</span>,
+  <span class="nm">material_id</span>       <span class="ty">INTEGER</span> <span class="kw">REFERENCES</span> <span class="ty">rates</span>(<span class="nm">id</span>) <span class="kw">ON DELETE SET NULL</span>,
+  <span class="nm">notes</span>             <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">''</span>
+);
+<span class="kw">CREATE INDEX</span> idx_boq_project <span class="kw">ON</span> boq_items(project_id, sort_order);
+<span class="kw">CREATE INDEX</span> idx_boq_revision <span class="kw">ON</span> boq_items(revision_id);
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> <span class="ty">rates</span> (
+  <span class="nm">id</span>           <span class="ty">INTEGER</span> <span class="kw">PRIMARY KEY AUTOINCREMENT</span>,
+  <span class="nm">name</span>         <span class="ty">TEXT</span> <span class="kw">NOT NULL</span>,
+  <span class="nm">category</span>     <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">'civil'</span>,
+  <span class="nm">unit</span>         <span class="ty">TEXT</span> <span class="kw">NOT NULL</span>,
+  <span class="nm">rate</span>         <span class="ty">REAL</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0</span>,
+  <span class="nm">city</span>         <span class="ty">TEXT</span>,                            <span class="cm">-- NULL = national</span>
+  <span class="nm">last_updated</span> <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> (<span class="fn">datetime</span>(<span class="st">'now'</span>)),
+  <span class="nm">is_system</span>    <span class="ty">INTEGER</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0</span>
+);
+<span class="kw">CREATE INDEX</span> idx_rates_category <span class="kw">ON</span> rates(category, city);
+<span class="kw">CREATE INDEX</span> idx_rates_name <span class="kw">ON</span> rates(name);
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> <span class="ty">templates</span> (
+  <span class="nm">id</span>           <span class="ty">INTEGER</span> <span class="kw">PRIMARY KEY AUTOINCREMENT</span>,
+  <span class="nm">name</span>         <span class="ty">TEXT</span> <span class="kw">NOT NULL</span>,
+  <span class="nm">description</span>  <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">''</span>,
+  <span class="nm">project_type</span> <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">'residential'</span>,
+  <span class="nm">items_json</span>   <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">'[]'</span>,    <span class="cm">-- JSON array of item objects</span>
+  <span class="nm">is_system</span>    <span class="ty">INTEGER</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0</span>,
+  <span class="nm">created_at</span>   <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> (<span class="fn">datetime</span>(<span class="st">'now'</span>))
+);
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> <span class="ty">revisions</span> (
+  <span class="nm">id</span>           <span class="ty">INTEGER</span> <span class="kw">PRIMARY KEY AUTOINCREMENT</span>,
+  <span class="nm">project_id</span>   <span class="ty">INTEGER</span> <span class="kw">NOT NULL REFERENCES</span> <span class="ty">projects</span>(<span class="nm">id</span>) <span class="kw">ON DELETE CASCADE</span>,
+  <span class="nm">name</span>         <span class="ty">TEXT</span> <span class="kw">NOT NULL</span>,                 <span class="cm">-- 'Rev A', 'Rev B', 'Client Review', etc.</span>
+  <span class="nm">notes</span>        <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">''</span>,
+  <span class="nm">grand_total</span>  <span class="ty">REAL</span> <span class="kw">NOT NULL DEFAULT</span> <span class="nu">0</span>,      <span class="cm">-- snapshot total at time of revision</span>
+  <span class="nm">created_at</span>   <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> (<span class="fn">datetime</span>(<span class="st">'now'</span>))
+);
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> <span class="ty">settings</span> (
+  <span class="nm">key</span>   <span class="ty">TEXT</span> <span class="kw">PRIMARY KEY</span>,
+  <span class="nm">value</span> <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> <span class="st">''</span>
+);
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> <span class="ty">migrations</span> (
+  <span class="nm">id</span>         <span class="ty">INTEGER</span> <span class="kw">PRIMARY KEY AUTOINCREMENT</span>,
+  <span class="nm">version</span>    <span class="ty">INTEGER</span> <span class="kw">NOT NULL UNIQUE</span>,
+  <span class="nm">applied_at</span> <span class="ty">TEXT</span> <span class="kw">NOT NULL DEFAULT</span> (<span class="fn">datetime</span>(<span class="st">'now'</span>))
+);</code></pre>
+</section>
+
+<!-- ═══ SECTION 7: TAURI COMMANDS ═══ -->
+<section id="tauri-cmds">
+  <div class="sec-header">
+    <div class="sec-num">// 07</div>
+    <div class="sec-title">Tauri IPC Command Contract</div>
+    <div class="sec-desc">Every <code>invoke()</code> call the frontend makes. Each command listed with its input args, return type, and error behaviour.</div>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>Implementation note:</strong> Most data operations go through <code>@tauri-apps/plugin-sql</code> directly (no custom Rust command needed). Custom Rust commands are only needed for file operations, backup, and OS-level actions. Use <code>Database.execute()</code> and <code>Database.select()</code> from the SQL plugin for all DB queries.
+  </div>
+
+  <table>
+    <thead><tr><th>Command / Method</th><th>Input</th><th>Returns</th><th>Error Behaviour</th></tr></thead>
+    <tbody>
+      <tr><td><strong>SQL Plugin</strong> — all DB queries</td><td colspan="3" style="color: var(--text3); font-style: italic;">Use @tauri-apps/plugin-sql directly — no custom Rust needed for CRUD</td></tr>
+      <tr><td><code>db.select&lt;ProjectRow[]&gt;(sql)</code></td><td>SQL string + params</td><td><code>ProjectRow[]</code></td><td>Throw, catch in store, set error state</td></tr>
+      <tr><td><code>db.execute(sql, params)</code></td><td>SQL string + params</td><td><code>QueryResult</code></td><td>Throw, catch in store</td></tr>
+
+      <tr><td colspan="4" style="background: var(--bg3); color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 12px;">Custom Tauri Commands (src-tauri/src/commands.rs)</td></tr>
+      <tr><td><code>invoke('backup_database', {destPath})</code></td><td><code>destPath: string</code></td><td><code>void</code></td><td>Show toast error if path is invalid</td></tr>
+      <tr><td><code>invoke('get_app_data_dir')</code></td><td>none</td><td><code>string</code></td><td>Should never fail</td></tr>
+      <tr><td><code>invoke('open_file_dialog', {filters})</code></td><td><code>filters: DialogFilter[]</code></td><td><code>string | null</code></td><td>null = user cancelled (not an error)</td></tr>
+      <tr><td><code>invoke('save_file_dialog', {defaultName, filters})</code></td><td><code>defaultName: string, filters</code></td><td><code>string | null</code></td><td>null = user cancelled</td></tr>
+      <tr><td><code>invoke('write_binary_file', {path, data})</code></td><td><code>path: string, data: number[]</code></td><td><code>void</code></td><td>Show error toast on failure</td></tr>
+      <tr><td><code>invoke('shell_open', {path})</code></td><td><code>path: string</code></td><td><code>void</code></td><td>Opens folder in Windows Explorer</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.1 — DB Singleton Pattern</h3>
+  <pre><code><span class="cm">// ─── src/lib/db.ts ────────────────────────────────────────────</span>
+<span class="kw">import</span> <span class="ty">Database</span> <span class="kw">from</span> <span class="st">'@tauri-apps/plugin-sql'</span>
+
+<span class="kw">let</span> <span class="nm">_db</span>: <span class="ty">Database</span> | <span class="kw">null</span> = <span class="kw">null</span>
+
+<span class="kw">export async function</span> <span class="fn">getDb</span>(): <span class="ty">Promise</span>&lt;<span class="ty">Database</span>&gt; {
+  <span class="kw">if</span> (!<span class="nm">_db</span>) {
+    <span class="nm">_db</span> = <span class="kw">await</span> <span class="ty">Database</span>.<span class="fn">load</span>(<span class="st">'sqlite:boq.db'</span>)
+    <span class="kw">await</span> <span class="fn">runMigrations</span>(<span class="nm">_db</span>)
+  }
+  <span class="kw">return</span> <span class="nm">_db</span>
+}
+
+<span class="cm">// Row type (snake_case from SQLite) — separate from domain type (camelCase)</span>
+<span class="kw">interface</span> <span class="ty">ProjectRow</span> {
+  <span class="nm">id</span>: <span class="kw">number</span>; <span class="nm">name</span>: <span class="kw">string</span>; <span class="nm">client_name</span>: <span class="kw">string</span>
+  <span class="nm">site_address</span>: <span class="kw">string</span>; <span class="nm">project_type</span>: <span class="kw">string</span>
+  <span class="nm">status</span>: <span class="kw">string</span>; <span class="nm">currency</span>: <span class="kw">string</span>; <span class="nm">tax_rate</span>: <span class="kw">number</span>
+  <span class="nm">contingency_rate</span>: <span class="kw">number</span>; <span class="nm">profit_margin_rate</span>: <span class="kw">number</span>
+  <span class="nm">notes</span>: <span class="kw">string</span>; <span class="nm">created_at</span>: <span class="kw">string</span>; <span class="nm">updated_at</span>: <span class="kw">string</span>
+}
+
+<span class="cm">// Mapper: DB row → domain type</span>
+<span class="kw">export function</span> <span class="fn">rowToProject</span>(<span class="nm">row</span>: <span class="ty">ProjectRow</span>): <span class="ty">Project</span> {
+  <span class="kw">return</span> {
+    <span class="nm">id</span>: <span class="nm">row</span>.<span class="nm">id</span>, <span class="nm">name</span>: <span class="nm">row</span>.<span class="nm">name</span>, <span class="nm">clientName</span>: <span class="nm">row</span>.<span class="nm">client_name</span>,
+    <span class="nm">siteAddress</span>: <span class="nm">row</span>.<span class="nm">site_address</span>, <span class="nm">projectType</span>: <span class="nm">row</span>.<span class="nm">project_type</span> <span class="kw">as</span> <span class="ty">ProjectType</span>,
+    <span class="nm">status</span>: <span class="nm">row</span>.<span class="nm">status</span> <span class="kw">as</span> <span class="ty">ProjectStatus</span>, <span class="nm">currency</span>: <span class="nm">row</span>.<span class="nm">currency</span>,
+    <span class="nm">taxRate</span>: <span class="nm">row</span>.<span class="nm">tax_rate</span>, <span class="nm">contingencyRate</span>: <span class="nm">row</span>.<span class="nm">contingency_rate</span>,
+    <span class="nm">profitMarginRate</span>: <span class="nm">row</span>.<span class="nm">profit_margin_rate</span>, <span class="nm">notes</span>: <span class="nm">row</span>.<span class="nm">notes</span>,
+    <span class="nm">createdAt</span>: <span class="nm">row</span>.<span class="nm">created_at</span>, <span class="nm">updatedAt</span>: <span class="nm">row</span>.<span class="nm">updated_at</span>,
+  }
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 8: SCREENS ═══ -->
+<section id="screen-dashboard">
+  <div class="sec-header">
+    <div class="sec-num">// 08</div>
+    <div class="sec-title">Screen: Project Dashboard</div>
+    <div class="sec-desc">Route: <code>/</code> — First screen the user sees. Lists all projects.</div>
+  </div>
+
+  <div class="wireframe">
+    <div class="wf-titlebar">
+      <div class="wf-dot" style="background:#ff5f57"></div>
+      <div class="wf-dot" style="background:#febc2e"></div>
+      <div class="wf-dot" style="background:#28c840"></div>
+      <span>BOQ Calculator — Projects</span>
+    </div>
+    <div class="wf-toolbar">
+      <span style="color: var(--accent); font-size: 12px; font-weight: 600;">BOQ Calculator</span>
+      <span style="margin-left: auto; display: flex; gap: 8px;">
+        <span class="wf-btn">⚙ Settings</span>
+        <span class="wf-btn">📦 Rate Library</span>
+        <span class="wf-btn">📄 Templates</span>
+        <span class="wf-btn primary">+ New Project</span>
+      </span>
+    </div>
+    <div class="wf-body">
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <div style="flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:4px; padding:6px 10px; font-size:11px; color:var(--text3);">🔍 Search projects...</div>
+        <div class="wf-btn">All Status ▾</div>
+        <div class="wf-btn">All Types ▾</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+        <div class="card" style="font-size:11px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="background:rgba(63,185,80,0.15); color:var(--green); padding:2px 6px; border-radius:3px; font-size:10px;">Draft</span>
+            <span style="color:var(--text3);">Residential</span>
+          </div>
+          <div style="font-weight:600; color:var(--text); margin-bottom:2px;">DHA Phase 6 House</div>
+          <div style="color:var(--text3); margin-bottom:8px;">Client: Mr. Ahmed Khan</div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text2);">PKR 4,250,000</span>
+            <span style="color:var(--text3);">Updated 2h ago</span>
+          </div>
+        </div>
+        <div class="card" style="font-size:11px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="background:rgba(210,153,34,0.15); color:var(--amber); padding:2px 6px; border-radius:3px; font-size:10px;">Submitted</span>
+            <span style="color:var(--text3);">Commercial</span>
+          </div>
+          <div style="font-weight:600; color:var(--text); margin-bottom:2px;">Defence Shop Renovation</div>
+          <div style="color:var(--text3); margin-bottom:8px;">Client: Malik Properties</div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text2);">PKR 1,800,000</span>
+            <span style="color:var(--text3);">Updated 3d ago</span>
+          </div>
+        </div>
+        <div class="card" style="font-size:11px; border: 2px dashed var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; min-height:90px; color:var(--text3);">
+          + New Project
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Component Specs</h3>
+  <table>
+    <thead><tr><th>Component</th><th>Props / Behaviour</th><th>Edge Case</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ProjectCard</strong></td><td>Displays: name, client, type badge, status badge, grand total (formatted PKR), updatedAt relative. Click opens BOQ editor. Right-click opens: Open, Edit Details, Archive, Export PDF.</td><td>If grandTotal is 0, show "No items yet" instead of PKR 0.</td></tr>
+      <tr><td><strong>NewProjectDialog</strong></td><td>Modal with fields: name (required), client name, site address, project type (select), default tax rate (pre-filled from settings). On submit: call projectStore.createProject(), navigate to /projects/:id/boq.</td><td>Disable submit while loading. Show inline errors from Zod validation.</td></tr>
+      <tr><td><strong>Search bar</strong></td><td>Debounce 200ms. Filters by project name OR client name. Clear button appears when text is present.</td><td>No results: show EmptyState with "No projects match your search".</td></tr>
+      <tr><td><strong>Status filter</strong></td><td>Radix Select. Options: All, Draft, Submitted, Awarded, Archived. Default: shows all except Archived.</td><td>Archived projects only shown when explicitly filtering by Archived.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="screen-boq">
+  <div class="sec-header">
+    <div class="sec-num">// 09</div>
+    <div class="sec-title">Screen: BOQ Editor</div>
+    <div class="sec-desc">Route: <code>/projects/:id/boq</code> — Core screen. 85% of user time is spent here.</div>
+  </div>
+
+  <div class="wireframe">
+    <div class="wf-titlebar">
+      <div class="wf-dot" style="background:#ff5f57"></div>
+      <div class="wf-dot" style="background:#febc2e"></div>
+      <div class="wf-dot" style="background:#28c840"></div>
+      <span>DHA Phase 6 House — BOQ Editor ● Saved</span>
+    </div>
+    <div class="wf-toolbar">
+      <span class="wf-btn">← Projects</span>
+      <span style="color:var(--text); font-size:12px; font-weight:600; margin:0 8px;">DHA Phase 6 House</span>
+      <span style="flex:1"></span>
+      <span class="wf-btn">+ Row</span>
+      <span class="wf-btn">+ Section</span>
+      <span class="wf-btn">🗑 Delete</span>
+      <span class="wf-btn">📋 Template</span>
+      <span class="wf-btn primary">⬇ Export PDF</span>
+      <span class="wf-btn">📊 Export XLS</span>
+    </div>
+    <div style="display:flex;">
+      <div style="flex:1; overflow:auto;">
+        <div class="wf-grid-header">
+          <div>Item No</div><div>Description</div><div>Unit</div>
+          <div>Quantity</div><div>Rate (PKR)</div><div>Amount (PKR)</div><div>Notes</div>
+        </div>
+        <div class="wf-grid-row"><div style="grid-column:1/-1;" class="wf-section-row">A — EARTHWORK & EXCAVATION</div></div>
+        <div class="wf-grid-row"><div>A.1</div><div>Excavation in foundation (hard soil)</div><div>m³</div><div>142.50</div><div>850</div><div>121,125</div><div></div></div>
+        <div class="wf-grid-row" style="background:rgba(88,166,255,0.05);"><div>A.2</div><div style="color:var(--accent);">|  typing...</div><div>m³</div><div></div><div></div><div></div><div></div></div>
+        <div class="wf-grid-row"><div style="grid-column:1/-1;" class="wf-section-row">B — CONCRETE WORKS</div></div>
+        <div class="wf-grid-row"><div>B.1</div><div>Plain Cement Concrete (1:4:8) in Blinding</div><div>m³</div><div>28.30</div><div>9,500</div><div>268,850</div><div></div></div>
+        <div class="wf-grid-row"><div>B.2</div><div>Reinforced Concrete C25 in Foundation</div><div>m³</div><div>45.60</div><div>18,500</div><div>843,600</div><div></div></div>
+      </div>
+      <div class="wf-sidebar">
+        <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:10px;">Summary</div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:10px; color:var(--text3); margin-bottom:2px;">A - Earthwork</div>
+          <div style="font-weight:600; font-size:12px;">PKR 121,125</div>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:10px; color:var(--text3); margin-bottom:2px;">B - Concrete</div>
+          <div style="font-weight:600; font-size:12px;">PKR 1,112,450</div>
+        </div>
+        <div style="border-top:1px solid var(--border); padding-top:8px; margin-top:8px;">
+          <div style="font-size:10px; color:var(--text3);">Subtotal</div>
+          <div style="font-weight:600; font-size:12px;">PKR 4,250,000</div>
+          <div style="font-size:10px; color:var(--text3); margin-top:6px;">GST 17%</div>
+          <div style="font-size:12px;">PKR 722,500</div>
+          <div style="font-size:10px; color:var(--accent); margin-top:6px; font-weight:600;">GRAND TOTAL</div>
+          <div style="font-size:14px; font-weight:700; color:var(--text);">PKR 4,972,500</div>
+        </div>
+      </div>
+    </div>
+    <div class="wf-summary">
+      <span>42 items</span>
+      <span>6 sections</span>
+      <span style="color:var(--green);">● Saved 2s ago</span>
+    </div>
+  </div>
+
+  <h3>Layout Rules</h3>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">Main area</div>
+      <div class="card-body">AG Grid fills <code>flex: 1</code>. Grid height: <code>calc(100vh - toolbar_height - statusbar_height)</code>. Never use a fixed height. The grid must fill all available vertical space.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Summary sidebar</div>
+      <div class="card-body">Fixed <code>width: 200px</code>. Collapsible with a toggle button. Scrolls independently from the grid. Updates in real-time on every cell edit via <code>recalcTotals()</code>.</div>
+    </div>
+  </div>
+
+  <h3>Title Bar Indicator</h3>
+  <p>The window title must show save state: <code>"Project Name — BOQ Editor ● Saved"</code> (green dot) or <code>"Project Name — BOQ Editor ○ Saving..."</code> (dim dot). Use Tauri's <code>window.setTitle()</code> via <code>invoke</code>. This mimics VS Code's unsaved indicator — extremely important for user trust.</p>
+</section>
+
+<section id="screen-rates">
+  <div class="sec-header">
+    <div class="sec-num">// 10</div>
+    <div class="sec-title">Screen: Rate Library</div>
+    <div class="sec-desc">Route: <code>/rates</code> — Manage material and labour rates used across all projects.</div>
+  </div>
+
+  <h3>Component Layout</h3>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">Left: Filter Panel</div>
+      <div class="card-body">Search input (filters by name). Category filter (all 13 categories). City filter (national + 7 cities). "Show system rates" toggle. "Import from Excel" button (opens file dialog, parses xlsx, maps columns).</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Right: Rate Table</div>
+      <div class="card-body">Columns: Name | Category | Unit | Rate (PKR) | City | Last Updated | Actions. Inline editable rate cell (click to edit, Enter to save). Add rate button opens AddRateDialog. System rates show 🔒 icon — cannot be deleted, only overridden.</div>
+    </div>
+  </div>
+
+  <h3>AddRateDialog Fields</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th>Validation</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td>Name</td><td>Text input</td><td>Required, min 3 chars</td><td>""</td></tr>
+      <tr><td>Category</td><td>Select</td><td>Required, from RateCategory</td><td>"civil"</td></tr>
+      <tr><td>Unit</td><td>Combobox (select + free text)</td><td>Required</td><td>"m³"</td></tr>
+      <tr><td>Rate (PKR)</td><td>Number input</td><td>Required, ≥ 0</td><td>0</td></tr>
+      <tr><td>City</td><td>Select (optional)</td><td>null = national</td><td>null</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="screen-settings">
+  <div class="sec-header">
+    <div class="sec-num">// 11</div>
+    <div class="sec-title">Screen: Settings</div>
+    <div class="sec-desc">Route: <code>/settings</code> — Company profile, defaults, and backup.</div>
+  </div>
+
+  <h3>Settings Sections</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Fields</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Company Profile</strong></td><td>Company Name, Address, Phone, Email, Logo (file picker, stores path)</td><td>All fields print on every PDF report header. Logo: accept PNG/JPG, store absolute path, render in PDF via base64.</td></tr>
+      <tr><td><strong>Defaults</strong></td><td>Default Tax Rate (%), Default City, Default Currency, Default Contingency %</td><td>Pre-fills New Project dialog. Changing here does NOT affect existing projects.</td></tr>
+      <tr><td><strong>Backup</strong></td><td>Backup Folder (folder picker), Auto-backup on Export (toggle), Backup Now (button), Open Backup Folder (button)</td><td>"Backup Now" copies sqlite file to backup folder with timestamp filename: <code>boq_backup_2025-03-15_14-30.sqlite</code></td></tr>
+      <tr><td><strong>About</strong></td><td>App version, DB location, License key field</td><td>DB path shown as read-only text. License key input for future activation system.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ SECTION 9: AG GRID CONFIG ═══ -->
+<section id="aggrid">
+  <div class="sec-header">
+    <div class="sec-num">// 12</div>
+    <div class="sec-title">AG Grid Column Definitions</div>
+    <div class="sec-desc">Exact column configuration for the BOQ grid. File: <code>src/features/boq/columnDefs.ts</code></div>
+  </div>
+
+  <div class="callout callout-amber">
+    <strong>Critical:</strong> Section header rows (isSectionHeader=true) must suppress quantity, rate, amount, and unit cells. Use <code>cellClassRules</code> to visually style them differently. Use <code>isFullWidthRow</code> or conditional column rendering based on row data.
+  </div>
+
+  <pre><code><span class="cm">// ─── src/features/boq/columnDefs.ts ──────────────────────────</span>
+<span class="kw">import type</span> { <span class="ty">ColDef</span>, <span class="ty">ColGroupDef</span> } <span class="kw">from</span> <span class="st">'ag-grid-community'</span>
+<span class="kw">import type</span> { <span class="ty">BoqItem</span> } <span class="kw">from</span> <span class="st">'../../types/domain'</span>
+
+<span class="kw">export const</span> <span class="nm">defaultColDef</span>: <span class="ty">ColDef</span>&lt;<span class="ty">BoqItem</span>&gt; = {
+  <span class="nm">sortable</span>: <span class="kw">false</span>,         <span class="cm">// BOQ order is manual, not sortable</span>
+  <span class="nm">filter</span>: <span class="kw">false</span>,
+  <span class="nm">resizable</span>: <span class="kw">true</span>,
+  <span class="nm">suppressMovable</span>: <span class="kw">true</span>,   <span class="cm">// columns don't reorder</span>
+  <span class="nm">cellClass</span>: (<span class="nm">params</span>) =&gt;
+    <span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">isSectionHeader</span> ? <span class="st">'section-header-cell'</span> : <span class="st">''</span>,
+}
+
+<span class="kw">export const</span> <span class="nm">columnDefs</span>: <span class="ty">ColDef</span>&lt;<span class="ty">BoqItem</span>&gt;[] = [
+  {
+    <span class="nm">field</span>: <span class="st">'itemNo'</span>,
+    <span class="nm">headerName</span>: <span class="st">'Item No'</span>,
+    <span class="nm">width</span>: <span class="nu">80</span>,
+    <span class="nm">minWidth</span>: <span class="nu">60</span>,
+    <span class="nm">editable</span>: <span class="kw">true</span>,
+    <span class="nm">cellEditor</span>: <span class="st">'agTextCellEditor'</span>,
+    <span class="nm">suppressKeyboardEvent</span>: (<span class="nm">params</span>) =&gt; <span class="nm">params</span>.<span class="nm">event</span>.<span class="nm">key</span> === <span class="st">'Delete'</span>,
+  },
+  {
+    <span class="nm">field</span>: <span class="st">'description'</span>,
+    <span class="nm">headerName</span>: <span class="st">'Description'</span>,
+    <span class="nm">flex</span>: <span class="nu">1</span>,
+    <span class="nm">minWidth</span>: <span class="nu">200</span>,
+    <span class="nm">editable</span>: <span class="kw">true</span>,
+    <span class="nm">cellEditor</span>: <span class="st">'DescriptionEditor'</span>,  <span class="cm">// custom — see cellEditors section</span>
+    <span class="nm">cellEditorParams</span>: {
+      <span class="nm">useFormatter</span>: <span class="kw">true</span>
+    },
+    <span class="nm">wrapText</span>: <span class="kw">true</span>,
+    <span class="nm">autoHeight</span>: <span class="kw">true</span>,
+  },
+  {
+    <span class="nm">field</span>: <span class="st">'unit'</span>,
+    <span class="nm">headerName</span>: <span class="st">'Unit'</span>,
+    <span class="nm">width</span>: <span class="nu">80</span>,
+    <span class="nm">editable</span>: (<span class="nm">params</span>) =&gt; !<span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">isSectionHeader</span>,
+    <span class="nm">cellEditor</span>: <span class="st">'UnitEditor'</span>,           <span class="cm">// custom dropdown</span>
+    <span class="nm">cellRenderer</span>: (<span class="nm">params</span>: <span class="kw">any</span>) =&gt;
+      <span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">isSectionHeader</span> ? <span class="st">''</span> : <span class="nm">params</span>.<span class="nm">value</span>,
+  },
+  {
+    <span class="nm">field</span>: <span class="st">'quantity'</span>,
+    <span class="nm">headerName</span>: <span class="st">'Quantity'</span>,
+    <span class="nm">width</span>: <span class="nu">100</span>,
+    <span class="nm">editable</span>: (<span class="nm">params</span>) =&gt; !<span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">isSectionHeader</span>,
+    <span class="nm">cellEditor</span>: <span class="st">'NumericEditor'</span>,
+    <span class="nm">valueFormatter</span>: (<span class="nm">params</span>) =&gt; {
+      <span class="kw">if</span> (<span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">isSectionHeader</span>) <span class="kw">return</span> <span class="st">''</span>
+      <span class="kw">return</span> <span class="nm">params</span>.<span class="nm">value</span> != <span class="kw">null</span>
+        ? <span class="fn">formatQuantity</span>(<span class="nm">params</span>.<span class="nm">value</span>, <span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">unit</span>)
+        : <span class="st">''</span>
+    },
+    <span class="nm">type</span>: <span class="st">'numericColumn'</span>,
+  },
+  {
+    <span class="nm">field</span>: <span class="st">'rate'</span>,
+    <span class="nm">headerName</span>: <span class="st">'Rate (PKR)'</span>,
+    <span class="nm">width</span>: <span class="nu">120</span>,
+    <span class="nm">editable</span>: (<span class="nm">params</span>) =&gt; !<span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">isSectionHeader</span>,
+    <span class="nm">cellEditor</span>: <span class="st">'NumericEditor'</span>,
+    <span class="nm">valueFormatter</span>: (<span class="nm">params</span>) => {
+      <span class="kw">if</span> (<span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">isSectionHeader</span>) <span class="kw">return</span> <span class="st">''</span>
+      <span class="kw">return</span> <span class="fn">formatPKR</span>(<span class="nm">params</span>.<span class="nm">value</span>)
+    },
+    <span class="nm">type</span>: <span class="st">'numericColumn'</span>,
+    <span class="nm">cellClassRules</span>: {
+      <span class="st">'rate-warning'</span>: (<span class="nm">params</span>) =&gt; <span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">_hasError</span> === <span class="kw">true</span>,
+    },
+  },
+  {
+    <span class="nm">field</span>: <span class="st">'amount'</span>,
+    <span class="nm">headerName</span>: <span class="st">'Amount (PKR)'</span>,
+    <span class="nm">width</span>: <span class="nu">130</span>,
+    <span class="nm">editable</span>: <span class="kw">false</span>,              <span class="cm">// computed — never directly editable</span>
+    <span class="nm">valueFormatter</span>: (<span class="nm">params</span>) =&gt; {
+      <span class="kw">if</span> (<span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">isSectionHeader</span>) {
+        <span class="cm">// Show section subtotal in Amount column for section header rows</span>
+        <span class="kw">return</span> <span class="fn">formatPKR</span>(<span class="fn">getSectionSubtotal</span>(<span class="nm">params</span>.<span class="nm">data</span>))
+      }
+      <span class="kw">return</span> <span class="fn">formatPKR</span>(<span class="nm">params</span>.<span class="nm">value</span>)
+    },
+    <span class="nm">type</span>: <span class="st">'numericColumn'</span>,
+    <span class="nm">cellClass</span>: <span class="st">'amount-cell'</span>,    <span class="cm">// bold, slightly different background</span>
+  },
+  {
+    <span class="nm">field</span>: <span class="st">'notes'</span>,
+    <span class="nm">headerName</span>: <span class="st">'Notes'</span>,
+    <span class="nm">width</span>: <span class="nu">100</span>,
+    <span class="nm">editable</span>: <span class="kw">true</span>,
+    <span class="nm">cellEditor</span>: <span class="st">'agTextCellEditor'</span>,
+    <span class="nm">cellStyle</span>: { <span class="nm">color</span>: <span class="st">'#8b949e'</span>, <span class="nm">fontSize</span>: <span class="st">'12px'</span> },
+  },
+]
+
+<span class="cm">// Grid Options (pass to AgGridReact)</span>
+<span class="kw">export const</span> <span class="nm">gridOptions</span> = {
+  <span class="nm">rowDragManaged</span>: <span class="kw">true</span>,          <span class="cm">// drag-to-reorder rows</span>
+  <span class="nm">animateRows</span>: <span class="kw">true</span>,
+  <span class="nm">stopEditingWhenCellsLoseFocus</span>: <span class="kw">true</span>,
+  <span class="nm">enterNavigatesVerticallyAfterEdit</span>: <span class="kw">true</span>,  <span class="cm">// Enter moves down like Excel</span>
+  <span class="nm">tabToNextCell</span>: <span class="kw">true</span>,
+  <span class="nm">undoRedoCellEditing</span>: <span class="kw">true</span>,    <span class="cm">// Ctrl+Z undo within cell</span>
+  <span class="nm">undoRedoCellEditingLimit</span>: <span class="nu">20</span>,
+  <span class="nm">getRowId</span>: (<span class="nm">params</span>: <span class="kw">any</span>) =&gt; <span class="ty">String</span>(<span class="nm">params</span>.<span class="nm">data</span>.<span class="nm">id</span>),
+  <span class="nm">rowHeight</span>: <span class="nu">36</span>,
+  <span class="nm">headerHeight</span>: <span class="nu">36</span>,
+  <span class="nm">getRowClass</span>: (<span class="nm">params</span>: <span class="kw">any</span>) =&gt;
+    <span class="nm">params</span>.<span class="nm">data</span>?.<span class="nm">isSectionHeader</span> ? <span class="st">'boq-section-header-row'</span> : <span class="st">'boq-item-row'</span>,
+  <span class="nm">onCellValueChanged</span>: <span class="cm">/* call boqStore.updateItem + recalcTotals */</span>,
+  <span class="nm">onRowDragEnd</span>: <span class="cm">/* call boqStore.reorderItems with new order */</span>,
+  <span class="nm">onCellContextMenu</span>: <span class="cm">/* show BoqContextMenu at mouse position */</span>,
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 10: CELL EDITORS ═══ -->
+<section id="cell-editors">
+  <div class="sec-header">
+    <div class="sec-num">// 13</div>
+    <div class="sec-title">Custom Cell Editors</div>
+  </div>
+
+  <h3>DescriptionEditor — with Rate Library Autocomplete</h3>
+  <pre><code><span class="cm">// ─── src/features/boq/cellEditors/DescriptionEditor.tsx ──────</span>
+<span class="cm">// AG Grid custom cell editor interface:</span>
+<span class="cm">//   - forwardRef with useImperativeHandle exposing:</span>
+<span class="cm">//     getValue() → string (current input value)</span>
+<span class="cm">//     isCancelAfterEnd() → false (always commit)</span>
+<span class="cm">//   - Input is focused immediately on mount (useEffect)</span>
+<span class="cm">//   - Escape key: call params.api.stopEditing(true) to cancel</span>
+<span class="cm">//   - Enter key: call params.api.stopEditing(false) to commit</span>
+<span class="cm">//   - Autocomplete: as user types, call rateStore.searchRates(value, 8)</span>
+<span class="cm">//   - Show dropdown list below input with matching rates</span>
+<span class="cm">//   - Each autocomplete item shows: name, unit, rate</span>
+<span class="cm">//   - On select: fill description, unit, rate in same row</span>
+<span class="cm">//     via params.api.getRowNode(rowId).setDataValue('unit', rate.unit)</span>
+<span class="cm">//   - Arrow keys navigate dropdown; Tab/Enter selects</span>
+<span class="cm">//   - Close dropdown on Escape without selecting</span></code></pre>
+
+  <h3>NumericEditor</h3>
+  <pre><code><span class="cm">// ─── src/features/boq/cellEditors/NumericEditor.tsx ──────────</span>
+<span class="cm">// - Input type="number"</span>
+<span class="cm">// - min="0"</span>
+<span class="cm">// - Select all text on focus (so user can type to replace)</span>
+<span class="cm">// - Reject non-numeric keys (allow: 0-9, '.', Backspace, Delete, Arrow keys)</span>
+<span class="cm">// - On commit: parse float, if NaN → return 0</span>
+<span class="cm">// - After rate cell changes: auto-update amount in same row</span>
+<span class="cm">// - After quantity cell changes: auto-update amount in same row</span>
+<span class="cm">// - amount = Math.round(quantity * rate * 100) / 100</span></code></pre>
+
+  <h3>UnitEditor</h3>
+  <pre><code><span class="cm">// ─── src/features/boq/cellEditors/UnitEditor.tsx ─────────────</span>
+<span class="cm">// - Radix Select with all VALID_UNITS as options</span>
+<span class="cm">// - Plus a "Custom..." option that shows a text input</span>
+<span class="cm">// - Pre-selects current unit value</span>
+<span class="cm">// - On select: immediately commit (no need for Enter)</span>
+<span class="cm">// - Keyboard: type first letter to jump to matching unit</span></code></pre>
+</section>
+
+<!-- ═══ SECTION 11: CONTEXT MENU ═══ -->
+<section id="context-menu">
+  <div class="sec-header">
+    <div class="sec-num">// 14</div>
+    <div class="sec-title">Right-Click Context Menu</div>
+  </div>
+
+  <table>
+    <thead><tr><th>Menu Item</th><th>Shortcut</th><th>Behaviour</th><th>Available When</th></tr></thead>
+    <tbody>
+      <tr><td>Insert Row Above</td><td>—</td><td>Add blank BoqItem with sortOrder before current row</td><td>Any row</td></tr>
+      <tr><td>Insert Row Below</td><td>Ctrl+Enter</td><td>Add blank BoqItem with sortOrder after current row</td><td>Any row</td></tr>
+      <tr><td>Add Section Header Above</td><td>—</td><td>Insert isSectionHeader=true row above</td><td>Any row</td></tr>
+      <tr><td>Add Section Header Below</td><td>Ctrl+Shift+H</td><td>Insert isSectionHeader=true row below</td><td>Any row</td></tr>
+      <tr><td>Duplicate Row</td><td>Ctrl+D</td><td>Copy current row, insert below, new id, same data</td><td>Non-header rows only</td></tr>
+      <tr><td>Delete Row(s)</td><td>Delete key</td><td>Show confirm dialog if selected rows > 3. Then delete.</td><td>Any row(s)</td></tr>
+      <tr><td>— separator —</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>Copy Description</td><td>—</td><td>Copy description text to clipboard</td><td>Non-header rows</td></tr>
+      <tr><td>Set Rate from Library</td><td>—</td><td>Open rate search popover, select rate → fill rate + unit</td><td>Non-header rows</td></tr>
+      <tr><td>— separator —</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>Save as Template Item</td><td>—</td><td>Adds this row to a template (select which template)</td><td>Non-header rows</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ SECTION 12: CALC ENGINE ═══ -->
+<section id="calc-engine">
+  <div class="sec-header">
+    <div class="sec-num">// 15</div>
+    <div class="sec-title">Calculation Engine</div>
+    <div class="sec-desc">File: <code>src/lib/calculator.ts</code> — Pure functions only. No imports from React or DB.</div>
+  </div>
+
+  <pre><code><span class="cm">// ─── src/lib/calculator.ts ────────────────────────────────────</span>
+
+<span class="cm">/** Round to 2 decimal places (half-up) */</span>
+<span class="kw">export function</span> <span class="fn">round2</span>(<span class="nm">n</span>: <span class="kw">number</span>): <span class="kw">number</span> {
+  <span class="kw">return</span> <span class="ty">Math</span>.<span class="fn">round</span>(<span class="nm">n</span> * <span class="nu">100</span>) / <span class="nu">100</span>
+}
+
+<span class="cm">/** Calculate amount for a single item */</span>
+<span class="kw">export function</span> <span class="fn">calcItemAmount</span>(<span class="nm">quantity</span>: <span class="kw">number</span>, <span class="nm">rate</span>: <span class="kw">number</span>): <span class="kw">number</span> {
+  <span class="kw">if</span> (!<span class="fn">isFinite</span>(<span class="nm">quantity</span>) || !<span class="fn">isFinite</span>(<span class="nm">rate</span>)) <span class="kw">return</span> <span class="nu">0</span>
+  <span class="kw">return</span> <span class="fn">round2</span>(<span class="nm">quantity</span> * <span class="nm">rate</span>)
+}
+
+<span class="cm">/** Calculate all totals for a project */</span>
+<span class="kw">export function</span> <span class="fn">calcTotals</span>(
+  <span class="nm">items</span>: <span class="ty">BoqItem</span>[],
+  <span class="nm">project</span>: <span class="ty">Pick</span>&lt;<span class="ty">Project</span>, <span class="st">'taxRate'</span> | <span class="st">'contingencyRate'</span> | <span class="st">'profitMarginRate'</span>&gt;
+): <span class="ty">BoqTotals</span> {
+  <span class="cm">// Build sections array</span>
+  <span class="kw">const</span> <span class="nm">sections</span>: { <span class="nm">label</span>: <span class="kw">string</span>; <span class="nm">subtotal</span>: <span class="kw">number</span> }[] = []
+  <span class="kw">let</span> <span class="nm">currentSection</span>: <span class="kw">string</span> = <span class="st">'General'</span>
+  <span class="kw">let</span> <span class="nm">currentSubtotal</span> = <span class="nu">0</span>
+  <span class="kw">let</span> <span class="nm">sectionStarted</span> = <span class="kw">false</span>
+
+  <span class="nm">items</span>.<span class="fn">forEach</span>((<span class="nm">item</span>) =&gt; {
+    <span class="kw">if</span> (<span class="nm">item</span>.<span class="nm">isSectionHeader</span>) {
+      <span class="kw">if</span> (<span class="nm">sectionStarted</span>) {
+        <span class="nm">sections</span>.<span class="fn">push</span>({ <span class="nm">label</span>: <span class="nm">currentSection</span>, <span class="nm">subtotal</span>: <span class="fn">round2</span>(<span class="nm">currentSubtotal</span>) })
+        <span class="nm">currentSubtotal</span> = <span class="nu">0</span>
+      }
+      <span class="nm">currentSection</span> = <span class="nm">item</span>.<span class="nm">description</span> || <span class="st">'Untitled Section'</span>
+      <span class="nm">sectionStarted</span> = <span class="kw">true</span>
+    } <span class="kw">else</span> {
+      <span class="nm">currentSubtotal</span> += <span class="nm">item</span>.<span class="nm">amount</span>
+    }
+  })
+  <span class="kw">if</span> (<span class="nm">sectionStarted</span>) {
+    <span class="nm">sections</span>.<span class="fn">push</span>({ <span class="nm">label</span>: <span class="nm">currentSection</span>, <span class="nm">subtotal</span>: <span class="fn">round2</span>(<span class="nm">currentSubtotal</span>) })
+  }
+
+  <span class="kw">const</span> <span class="nm">subtotal</span> = <span class="fn">round2</span>(<span class="nm">sections</span>.<span class="fn">reduce</span>((<span class="nm">s</span>, <span class="nm">sec</span>) =&gt; <span class="nm">s</span> + <span class="nm">sec</span>.<span class="nm">subtotal</span>, <span class="nu">0</span>))
+  <span class="kw">const</span> <span class="nm">contingencyAmount</span> = <span class="fn">round2</span>(<span class="nm">subtotal</span> * (<span class="nm">project</span>.<span class="nm">contingencyRate</span> || <span class="nu">0</span>))
+  <span class="kw">const</span> <span class="nm">netTotal</span> = <span class="fn">round2</span>(<span class="nm">subtotal</span> + <span class="nm">contingencyAmount</span>)
+  <span class="kw">const</span> <span class="nm">taxAmount</span> = <span class="fn">round2</span>(<span class="nm">netTotal</span> * (<span class="nm">project</span>.<span class="nm">taxRate</span> || <span class="nu">0</span>))
+  <span class="kw">const</span> <span class="nm">profitAmount</span> = <span class="fn">round2</span>(<span class="nm">netTotal</span> * (<span class="nm">project</span>.<span class="nm">profitMarginRate</span> || <span class="nu">0</span>))
+  <span class="kw">const</span> <span class="nm">grandTotal</span> = <span class="fn">round2</span>(<span class="nm">netTotal</span> + <span class="nm">taxAmount</span> + <span class="nm">profitAmount</span>)
+
+  <span class="kw">return</span> { <span class="nm">sections</span>, <span class="nm">subtotal</span>, <span class="nm">contingencyAmount</span>, <span class="nm">netTotal</span>, <span class="nm">taxAmount</span>, <span class="nm">profitAmount</span>, <span class="nm">grandTotal</span> }
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 13: VALIDATION ═══ -->
+<section id="validation">
+  <div class="sec-header">
+    <div class="sec-num">// 16</div>
+    <div class="sec-title">Validation Schemas (Zod)</div>
+    <div class="sec-desc">File: <code>src/lib/validator.ts</code></div>
+  </div>
+
+  <pre><code><span class="cm">// ─── src/lib/validator.ts ─────────────────────────────────────</span>
+<span class="kw">import</span> { <span class="nm">z</span> } <span class="kw">from</span> <span class="st">'zod'</span>
+
+<span class="kw">export const</span> <span class="nm">ProjectSchema</span> = <span class="nm">z</span>.<span class="fn">object</span>({
+  <span class="nm">name</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">min</span>(<span class="nu">1</span>, <span class="st">'Project name is required'</span>).<span class="fn">max</span>(<span class="nu">200</span>),
+  <span class="nm">clientName</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">max</span>(<span class="nu">200</span>).<span class="fn">default</span>(<span class="st">''</span>),
+  <span class="nm">siteAddress</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">max</span>(<span class="nu">500</span>).<span class="fn">default</span>(<span class="st">''</span>),
+  <span class="nm">projectType</span>: <span class="nm">z</span>.<span class="fn">enum</span>([<span class="st">'residential'</span>,<span class="st">'commercial'</span>,<span class="st">'industrial'</span>,<span class="st">'infrastructure'</span>,<span class="st">'renovation'</span>,<span class="st">'other'</span>]),
+  <span class="nm">taxRate</span>: <span class="nm">z</span>.<span class="fn">number</span>().<span class="fn">min</span>(<span class="nu">0</span>).<span class="fn">max</span>(<span class="nu">1</span>, <span class="st">'Tax rate must be between 0 and 1 (e.g. 0.17 for 17%)'</span>),
+  <span class="nm">contingencyRate</span>: <span class="nm">z</span>.<span class="fn">number</span>().<span class="fn">min</span>(<span class="nu">0</span>).<span class="fn">max</span>(<span class="nu">1</span>).<span class="fn">default</span>(<span class="nu">0</span>),
+  <span class="nm">profitMarginRate</span>: <span class="nm">z</span>.<span class="fn">number</span>().<span class="fn">min</span>(<span class="nu">0</span>).<span class="fn">max</span>(<span class="nu">1</span>).<span class="fn">default</span>(<span class="nu">0</span>),
+  <span class="nm">notes</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">default</span>(<span class="st">''</span>),
+})
+
+<span class="kw">export const</span> <span class="nm">BoqItemSchema</span> = <span class="nm">z</span>.<span class="fn">object</span>({
+  <span class="nm">itemNo</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">max</span>(<span class="nu">20</span>).<span class="fn">default</span>(<span class="st">''</span>),
+  <span class="nm">description</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">max</span>(<span class="nu">500</span>).<span class="fn">default</span>(<span class="st">''</span>),
+  <span class="nm">unit</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">max</span>(<span class="nu">20</span>).<span class="fn">default</span>(<span class="st">'m³'</span>),
+  <span class="nm">quantity</span>: <span class="nm">z</span>.<span class="fn">number</span>().<span class="fn">min</span>(<span class="nu">0</span>, <span class="st">'Quantity cannot be negative'</span>).<span class="fn">default</span>(<span class="nu">0</span>),
+  <span class="nm">rate</span>: <span class="nm">z</span>.<span class="fn">number</span>().<span class="fn">min</span>(<span class="nu">0</span>, <span class="st">'Rate cannot be negative'</span>).<span class="fn">default</span>(<span class="nu">0</span>),
+  <span class="nm">notes</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">max</span>(<span class="nu">1000</span>).<span class="fn">default</span>(<span class="st">''</span>),
+})
+
+<span class="kw">export const</span> <span class="nm">RateSchema</span> = <span class="nm">z</span>.<span class="fn">object</span>({
+  <span class="nm">name</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">min</span>(<span class="nu">2</span>, <span class="st">'Name must be at least 2 characters'</span>).<span class="fn">max</span>(<span class="nu">200</span>),
+  <span class="nm">category</span>: <span class="nm">z</span>.<span class="fn">enum</span>([<span class="st">'civil'</span>,<span class="st">'earthwork'</span>,<span class="st">'concrete'</span>,<span class="st">'masonry'</span>,<span class="st">'steel'</span>,<span class="st">'finishing'</span>,<span class="st">'mep'</span>,<span class="st">'roofing'</span>,<span class="st">'flooring'</span>,<span class="st">'doors_windows'</span>,<span class="st">'painting'</span>,<span class="st">'labour'</span>,<span class="st">'other'</span>]),
+  <span class="nm">unit</span>: <span class="nm">z</span>.<span class="fn">string</span>().<span class="fn">min</span>(<span class="nu">1</span>).<span class="fn">max</span>(<span class="nu">20</span>),
+  <span class="nm">rate</span>: <span class="nm">z</span>.<span class="fn">number</span>().<span class="fn">min</span>(<span class="nu">0</span>),
+  <span class="nm">city</span>: <span class="nm">z</span>.<span class="fn">enum</span>([<span class="st">'lahore'</span>,<span class="st">'karachi'</span>,<span class="st">'islamabad'</span>,<span class="st">'peshawar'</span>,<span class="st">'quetta'</span>,<span class="st">'faisalabad'</span>,<span class="st">'multan'</span>]).<span class="fn">nullable</span>().<span class="fn">default</span>(<span class="kw">null</span>),
+})
+
+<span class="cm">// Pre-export validation — called before PDF/Excel export</span>
+<span class="kw">export function</span> <span class="fn">validateBoqForExport</span>(<span class="nm">items</span>: <span class="ty">BoqItem</span>[], <span class="nm">project</span>: <span class="ty">Project</span>): <span class="kw">string</span>[] {
+  <span class="kw">const</span> <span class="nm">errors</span>: <span class="kw">string</span>[] = []
+  <span class="kw">if</span> (!<span class="nm">project</span>.<span class="nm">name</span>) <span class="nm">errors</span>.<span class="fn">push</span>(<span class="st">'Project name is required'</span>)
+  <span class="kw">const</span> <span class="nm">nonHeaderItems</span> = <span class="nm">items</span>.<span class="fn">filter</span>(<span class="nm">i</span> =&gt; !<span class="nm">i</span>.<span class="nm">isSectionHeader</span>)
+  <span class="kw">if</span> (<span class="nm">nonHeaderItems</span>.<span class="nm">length</span> === <span class="nu">0</span>) <span class="nm">errors</span>.<span class="fn">push</span>(<span class="st">'BOQ has no items to export'</span>)
+  <span class="kw">const</span> <span class="nm">emptyDescriptions</span> = <span class="nm">nonHeaderItems</span>.<span class="fn">filter</span>(<span class="nm">i</span> =&gt; !<span class="nm">i</span>.<span class="nm">description</span>.<span class="fn">trim</span>())
+  <span class="kw">if</span> (<span class="nm">emptyDescriptions</span>.<span class="nm">length</span> &gt; <span class="nu">0</span>)
+    <span class="nm">errors</span>.<span class="fn">push</span>(<span class="st">`${emptyDescriptions.length} item(s) have no description`</span>)
+  <span class="kw">return</span> <span class="nm">errors</span>
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 14: PDF EXPORT ═══ -->
+<section id="export-pdf">
+  <div class="sec-header">
+    <div class="sec-num">// 17</div>
+    <div class="sec-title">PDF Export Specification</div>
+    <div class="sec-desc">File: <code>src/features/export/PdfDocument.tsx</code></div>
+  </div>
+
+  <h3>PDF Page Layout (A4)</h3>
+  <table>
+    <thead><tr><th>Element</th><th>Position / Size</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Every Page Header</strong></td><td>Top, height 60px</td><td>Left: company logo (40px tall) + company name. Right: "Bill of Quantities", project name, page X of Y. Bottom border line.</td></tr>
+      <tr><td><strong>Every Page Footer</strong></td><td>Bottom, height 30px</td><td>Left: "Prepared by [company name]". Center: date prepared. Right: "Page X of Y". Top border line.</td></tr>
+      <tr><td><strong>Cover Content</strong></td><td>Page 1 body</td><td>Project title (large), client name, site address, project type, date prepared, revision number, large totals box (subtotal / tax / grand total).</td></tr>
+      <tr><td><strong>Table Header Row</strong></td><td>Repeats on each page</td><td>Item No | Description | Unit | Qty | Rate (PKR) | Amount (PKR)</td></tr>
+      <tr><td><strong>Section Header Row</strong></td><td>Full-width, shaded</td><td>Background: light gray. Text: section name + section subtotal right-aligned.</td></tr>
+      <tr><td><strong>Item Row</strong></td><td>Standard row</td><td>Alternating white/very light gray background. Amount column right-aligned.</td></tr>
+      <tr><td><strong>Summary Page</strong></td><td>Final page</td><td>Section-by-section subtotals table. Then: Subtotal, Contingency (if >0), Net Total, GST, Profit (if >0), Grand Total. Signature blocks: 3 columns (Prepared By / Checked By / Approved By) with name + designation lines.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Column Widths (A4 portrait, 15mm margins each side)</h3>
+  <pre><code><span class="cm">// Usable width: 210mm - 30mm = 180mm</span>
+<span class="nm">Item No</span>:     <span class="nu">15mm</span>
+<span class="nm">Description</span>: <span class="nu">75mm</span>   <span class="cm">← widest — descriptions are long</span>
+<span class="nm">Unit</span>:        <span class="nu">15mm</span>
+<span class="nm">Quantity</span>:    <span class="nu">25mm</span>
+<span class="nm">Rate</span>:        <span class="nu">25mm</span>
+<span class="nm">Amount</span>:      <span class="nu">25mm</span>
+<span class="cm">Total:        180mm ✓</span></code></pre>
+
+  <h3>Export Function Flow</h3>
+  <pre><code><span class="kw">export async function</span> <span class="fn">exportToPdf</span>(<span class="nm">project</span>: <span class="ty">Project</span>, <span class="nm">items</span>: <span class="ty">BoqItem</span>[], <span class="nm">settings</span>: <span class="ty">AppSettings</span>) {
+  <span class="cm">// 1. Validate — throw if errors</span>
+  <span class="kw">const</span> <span class="nm">errors</span> = <span class="fn">validateBoqForExport</span>(<span class="nm">items</span>, <span class="nm">project</span>)
+  <span class="kw">if</span> (<span class="nm">errors</span>.<span class="nm">length</span>) <span class="kw">throw new</span> <span class="ty">Error</span>(<span class="nm">errors</span>.<span class="fn">join</span>(<span class="st">', '</span>))
+
+  <span class="cm">// 2. Load logo as base64 (if logoPath set)</span>
+  <span class="kw">const</span> <span class="nm">logoBase64</span> = <span class="nm">settings</span>.<span class="nm">logoPath</span>
+    ? <span class="kw">await</span> <span class="fn">readFileAsBase64</span>(<span class="nm">settings</span>.<span class="nm">logoPath</span>)
+    : <span class="kw">null</span>
+
+  <span class="cm">// 3. Calc totals</span>
+  <span class="kw">const</span> <span class="nm">totals</span> = <span class="fn">calcTotals</span>(<span class="nm">items</span>, <span class="nm">project</span>)
+
+  <span class="cm">// 4. Render PDF using @react-pdf/renderer</span>
+  <span class="kw">const</span> <span class="nm">blob</span> = <span class="kw">await</span> <span class="fn">pdf</span>(
+    &lt;<span class="ty">PdfDocument</span> <span class="nm">project</span>={project} <span class="nm">items</span>={items} <span class="nm">totals</span>={totals}
+      <span class="nm">settings</span>={settings} <span class="nm">logoBase64</span>={logoBase64} /&gt;
+  ).<span class="fn">toBlob</span>()
+
+  <span class="cm">// 5. Show native Save dialog</span>
+  <span class="kw">const</span> <span class="nm">savePath</span> = <span class="kw">await</span> <span class="fn">invoke</span>&lt;<span class="kw">string</span> | <span class="kw">null</span>&gt;(<span class="st">'save_file_dialog'</span>, {
+    <span class="nm">defaultName</span>: <span class="st">`BOQ_${project.name}_${format(new Date(), 'yyyy-MM-dd')}.pdf`</span>,
+    <span class="nm">filters</span>: [{ <span class="nm">name</span>: <span class="st">'PDF'</span>, <span class="nm">extensions</span>: [<span class="st">'pdf'</span>] }]
+  })
+  <span class="kw">if</span> (!<span class="nm">savePath</span>) <span class="kw">return</span>  <span class="cm">// user cancelled</span>
+
+  <span class="cm">// 6. Write file</span>
+  <span class="kw">const</span> <span class="nm">buffer</span> = <span class="kw">await</span> <span class="nm">blob</span>.<span class="fn">arrayBuffer</span>()
+  <span class="kw">await</span> <span class="fn">invoke</span>(<span class="st">'write_binary_file'</span>, { <span class="nm">path</span>: <span class="nm">savePath</span>, <span class="nm">data</span>: <span class="ty">Array</span>.<span class="fn">from</span>(<span class="kw">new</span> <span class="ty">Uint8Array</span>(<span class="nm">buffer</span>)) })
+
+  <span class="cm">// 7. Auto-backup if enabled</span>
+  <span class="kw">if</span> (<span class="nm">settings</span>.<span class="nm">autoBackupOnExport</span>) <span class="kw">await</span> <span class="fn">backupDatabase</span>(<span class="nm">settings</span>)
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 15: EXCEL EXPORT ═══ -->
+<section id="export-excel">
+  <div class="sec-header">
+    <div class="sec-num">// 18</div>
+    <div class="sec-title">Excel Export Specification</div>
+    <div class="sec-desc">File: <code>src/features/export/exportExcel.ts</code></div>
+  </div>
+
+  <pre><code><span class="kw">import</span> * <span class="kw">as</span> <span class="ty">XLSX</span> <span class="kw">from</span> <span class="st">'xlsx'</span>
+
+<span class="kw">export async function</span> <span class="fn">exportToExcel</span>(<span class="nm">project</span>: <span class="ty">Project</span>, <span class="nm">items</span>: <span class="ty">BoqItem</span>[]) {
+  <span class="kw">const</span> <span class="nm">wb</span> = <span class="ty">XLSX</span>.<span class="fn">utils</span>.<span class="fn">book_new</span>()
+
+  <span class="cm">// ── Row data ─────────────────────────────────────────────────</span>
+  <span class="cm">// Row 1: Title</span>
+  <span class="cm">// Row 2: Project name, client, site, date</span>
+  <span class="cm">// Row 3: empty</span>
+  <span class="cm">// Row 4: Headers — Item No | Description | Unit | Qty | Rate | Amount</span>
+  <span class="cm">// Row 5+: items (section headers as merged full-width rows)</span>
+  <span class="cm">// After last item: empty row, then totals</span>
+
+  <span class="kw">const</span> <span class="nm">rows</span>: <span class="kw">any</span>[][] = [
+    [<span class="st">'BILL OF QUANTITIES'</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>],
+    [<span class="st">'Project:'</span>, <span class="nm">project</span>.<span class="nm">name</span>, <span class="st">''</span>, <span class="st">'Client:'</span>, <span class="nm">project</span>.<span class="nm">clientName</span>, <span class="st">''</span>],
+    [<span class="st">'Date:'</span>, <span class="fn">format</span>(<span class="kw">new</span> <span class="ty">Date</span>(), <span class="st">'dd/MM/yyyy'</span>), <span class="st">''</span>, <span class="st">'Site:'</span>, <span class="nm">project</span>.<span class="nm">siteAddress</span>, <span class="st">''</span>],
+    [],
+    [<span class="st">'Item No'</span>, <span class="st">'Description'</span>, <span class="st">'Unit'</span>, <span class="st">'Quantity'</span>, <span class="st">'Rate (PKR)'</span>, <span class="st">'Amount (PKR)'</span>],
+  ]
+
+  <span class="kw">let</span> <span class="nm">dataRowStart</span> = <span class="nu">6</span>  <span class="cm">// 1-indexed row number of first item</span>
+  <span class="kw">let</span> <span class="nm">rowIdx</span> = <span class="nm">dataRowStart</span>
+
+  <span class="nm">items</span>.<span class="fn">forEach</span>(<span class="nm">item</span> =&gt; {
+    <span class="kw">if</span> (<span class="nm">item</span>.<span class="nm">isSectionHeader</span>) {
+      <span class="nm">rows</span>.<span class="fn">push</span>([<span class="nm">item</span>.<span class="nm">description</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>])
+      <span class="cm">// will merge A:F for this row later</span>
+    } <span class="kw">else</span> {
+      rows.<span class="fn">push</span>([
+        <span class="nm">item</span>.<span class="nm">itemNo</span>,
+        <span class="nm">item</span>.<span class="nm">description</span>,
+        <span class="nm">item</span>.<span class="nm">unit</span>,
+        <span class="nm">item</span>.<span class="nm">quantity</span>,
+        <span class="nm">item</span>.<span class="nm">rate</span>,
+        { <span class="nm">f</span>: <span class="st">`D${rowIdx}*E${rowIdx}`</span> },  <span class="cm">// ← actual Excel formula!</span>
+      ])
+    }
+    <span class="nm">rowIdx</span>++
+  })
+
+  <span class="cm">// Totals</span>
+  <span class="nm">rows</span>.<span class="fn">push</span>([])
+  <span class="nm">rows</span>.<span class="fn">push</span>([<span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">'Sub Total'</span>, { <span class="nm">f</span>: <span class="st">`SUM(F${dataRowStart}:F${rowIdx-1})`</span> }])
+  <span class="nm">rows</span>.<span class="fn">push</span>([<span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">`GST ${project.taxRate * 100}%`</span>, { <span class="nm">f</span>: <span class="st">`F${rowIdx+1}*${project.taxRate}`</span> }])
+  <span class="nm">rows</span>.<span class="fn">push</span>([<span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">''</span>, <span class="st">'Grand Total'</span>, { <span class="nm">f</span>: <span class="st">`F${rowIdx+1}+F${rowIdx+2}`</span> }])
+
+  <span class="kw">const</span> <span class="nm">ws</span> = <span class="ty">XLSX</span>.<span class="fn">utils</span>.<span class="fn">aoa_to_sheet</span>(<span class="nm">rows</span>)
+
+  <span class="cm">// Column widths</span>
+  <span class="nm">ws</span>[<span class="st">'!cols'</span>] = [
+    { <span class="nm">wch</span>: <span class="nu">10</span> }, { <span class="nm">wch</span>: <span class="nu">45</span> }, { <span class="nm">wch</span>: <span class="nu">8</span> }, { <span class="nm">wch</span>: <span class="nu">12</span> }, { <span class="nm">wch</span>: <span class="nu">15</span> }, { <span class="nm">wch</span>: <span class="nu">18</span> }
+  ]
+
+  <span class="ty">XLSX</span>.<span class="fn">utils</span>.<span class="fn">book_append_sheet</span>(<span class="nm">wb</span>, <span class="nm">ws</span>, <span class="st">'BOQ'</span>)
+
+  <span class="cm">// Write and trigger save dialog</span>
+  <span class="kw">const</span> <span class="nm">buffer</span> = <span class="ty">XLSX</span>.<span class="fn">write</span>(<span class="nm">wb</span>, { <span class="nm">bookType</span>: <span class="st">'xlsx'</span>, <span class="nm">type</span>: <span class="st">'array'</span> })
+  <span class="cm">// → invoke save_file_dialog + write_binary_file (same as PDF export)</span>
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 16: AUTOSAVE ═══ -->
+<section id="autosave">
+  <div class="sec-header">
+    <div class="sec-num">// 19</div>
+    <div class="sec-title">Autosave Pattern</div>
+  </div>
+
+  <pre><code><span class="cm">// In boqStore.ts updateItem action:</span>
+<span class="kw">const</span> <span class="nm">saveTimer</span> = { <span class="nm">current</span>: <span class="kw">null</span> <span class="kw">as</span> <span class="ty">ReturnType</span>&lt;<span class="kw">typeof</span> <span class="fn">setTimeout</span>&gt; | <span class="kw">null</span> }
+
+<span class="fn">updateItem</span>: (<span class="nm">id</span>, <span class="nm">changes</span>) =&gt; {
+  <span class="fn">set</span>((<span class="nm">state</span>) =&gt; {
+    <span class="kw">const</span> <span class="nm">idx</span> = <span class="nm">state</span>.<span class="nm">items</span>.<span class="fn">findIndex</span>(<span class="nm">i</span> =&gt; <span class="nm">i</span>.<span class="nm">id</span> === <span class="nm">id</span>)
+    <span class="kw">if</span> (<span class="nm">idx</span> === -<span class="nu">1</span>) <span class="kw">return</span>
+    <span class="ty">Object</span>.<span class="fn">assign</span>(<span class="nm">state</span>.<span class="nm">items</span>[<span class="nm">idx</span>], <span class="nm">changes</span>)
+    <span class="cm">// Recompute amount immediately</span>
+    <span class="kw">if</span> (<span class="st">'quantity'</span> <span class="kw">in</span> <span class="nm">changes</span> || <span class="st">'rate'</span> <span class="kw">in</span> <span class="nm">changes</span>) {
+      <span class="nm">state</span>.<span class="nm">items</span>[<span class="nm">idx</span>].<span class="nm">amount</span> = <span class="fn">calcItemAmount</span>(
+        <span class="nm">state</span>.<span class="nm">items</span>[<span class="nm">idx</span>].<span class="nm">quantity</span>,
+        <span class="nm">state</span>.<span class="nm">items</span>[<span class="nm">idx</span>].<span class="nm">rate</span>
+      )
+    }
+    <span class="nm">state</span>.<span class="nm">items</span>[<span class="nm">idx</span>].<span class="nm">_isDirty</span> = <span class="kw">true</span>
+  })
+  <span class="cm">// Recalc totals synchronously</span>
+  <span class="fn">get</span>().<span class="fn">recalcTotals</span>()
+  <span class="cm">// Debounced DB save</span>
+  <span class="kw">if</span> (<span class="nm">saveTimer</span>.<span class="nm">current</span>) <span class="fn">clearTimeout</span>(<span class="nm">saveTimer</span>.<span class="nm">current</span>)
+  <span class="nm">saveTimer</span>.<span class="nm">current</span> = <span class="fn">setTimeout</span>(<span class="kw">async</span> () =&gt; {
+    <span class="kw">const</span> <span class="nm">dirtyItems</span> = <span class="fn">get</span>().<span class="nm">items</span>.<span class="fn">filter</span>(<span class="nm">i</span> =&gt; <span class="nm">i</span>.<span class="nm">_isDirty</span>)
+    <span class="kw">await</span> <span class="fn">saveItemsBatch</span>(<span class="nm">dirtyItems</span>)  <span class="cm">// write all dirty items in one transaction</span>
+    <span class="fn">set</span>((<span class="nm">s</span>) =&gt; { <span class="nm">s</span>.<span class="nm">lastSavedAt</span> = <span class="kw">new</span> <span class="ty">Date</span>(); <span class="nm">s</span>.<span class="nm">isSaving</span> = <span class="kw">false</span> })
+  }, <span class="nm">AUTOSAVE_DELAY_MS</span>)
+}</code></pre>
+</section>
+
+<!-- ═══ SECTION 17: ERROR STATES ═══ -->
+<section id="errors">
+  <div class="sec-header">
+    <div class="sec-num">// 20</div>
+    <div class="sec-title">Edge Cases & Error States</div>
+  </div>
+
+  <table>
+    <thead><tr><th>Scenario</th><th>What Happens</th><th>UI Response</th></tr></thead>
+    <tbody>
+      <tr><td>Export with 0 items</td><td><code>validateBoqForExport</code> returns error</td><td>Modal: "Your BOQ has no items. Add at least one item before exporting."</td></tr>
+      <tr><td>Export with empty descriptions</td><td>Validation returns warning (not block)</td><td>Modal: "X items have no description. Export anyway?" → Yes / Cancel</td></tr>
+      <tr><td>Apply template to non-empty BOQ</td><td>applyTemplate called with mode param</td><td>Modal: "This project already has items. Replace all items with template, or append template items?" → Replace / Append / Cancel</td></tr>
+      <tr><td>Delete row that is a section header with items under it</td><td>Count items between this header and next header</td><td>Modal: "Section 'Earthwork' contains 5 items. Delete section header only, or delete section and all its items?" → Header Only / All / Cancel</td></tr>
+      <tr><td>DB write fails (disk full / permissions)</td><td>saveItemsBatch throws</td><td>Set saveError in store. Show persistent toast: "Save failed — check disk space". Red dot in title bar. Do NOT lose in-memory data.</td></tr>
+      <tr><td>App opened, SQLite corrupted</td><td>runMigrations throws on startup</td><td>Full-screen error page: "Database error. Your data may be corrupted. [Open backup folder] [Contact support]". Do not crash silently.</td></tr>
+      <tr><td>User enters non-numeric value in Qty/Rate</td><td>NumericEditor rejects it</td><td>Input turns red border. Cell shows last valid value on blur. Tooltip: "Please enter a valid number."</td></tr>
+      <tr><td>Rate in cell deviates >50% from library</td><td>Rate stored but flagged</td><td>Amber background on rate cell. Tooltip: "Rate differs significantly from library (PKR 850/m³). Check if correct."</td></tr>
+      <tr><td>Project archived</td><td>status set to 'archived', project never deleted</td><td>Archived projects hidden from main list. "Archived Projects" section at bottom with count. Can restore (set status back to draft).</td></tr>
+      <tr><td>0 projects on first launch</td><td>filteredProjects is empty</td><td>EmptyState component: illustration + "No projects yet. Create your first project." + large "New Project" button.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ SECTION 18: KEYBOARD SHORTCUTS ═══ -->
+<section id="shortcuts">
+  <div class="sec-header">
+    <div class="sec-num">// 21</div>
+    <div class="sec-title">Keyboard Shortcut Implementation</div>
+  </div>
+
+  <p>Register all global shortcuts in <code>App.tsx</code> using a <code>useEffect</code> with <code>document.addEventListener('keydown')</code>. Only fire when no input/textarea is focused (check <code>document.activeElement</code>).</p>
+
+  <table>
+    <thead><tr><th>Shortcut</th><th>Context</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><code>Ctrl+N</code></td><td>Global</td><td>Open NewProjectDialog</td></tr>
+      <tr><td><code>Ctrl+S</code></td><td>BOQ Editor</td><td>boqStore.forceSave()</td></tr>
+      <tr><td><code>Ctrl+P</code></td><td>BOQ Editor</td><td>Open PDF preview modal</td></tr>
+      <tr><td><code>Ctrl+E</code></td><td>BOQ Editor</td><td>exportToPdf()</td></tr>
+      <tr><td><code>Ctrl+Shift+E</code></td><td>BOQ Editor</td><td>exportToExcel()</td></tr>
+      <tr><td><code>Ctrl+Enter</code></td><td>Grid focused</td><td>boqStore.addItem(selectedRowId) — insert below selected</td></tr>
+      <tr><td><code>Ctrl+D</code></td><td>Grid focused</td><td>boqStore.duplicateItem(selectedRowId)</td></tr>
+      <tr><td><code>Ctrl+Shift+H</code></td><td>Grid focused</td><td>boqStore.addSectionHeader(selectedRowId)</td></tr>
+      <tr><td><code>Delete</code></td><td>Grid focused, cell not editing</td><td>boqStore.deleteItems(selectedRowIds)</td></tr>
+      <tr><td><code>F5</code></td><td>BOQ Editor</td><td>boqStore.recalcTotals() (manual recalc)</td></tr>
+      <tr><td><code>Alt+R</code></td><td>Global</td><td>Navigate to /rates</td></tr>
+      <tr><td><code>Alt+T</code></td><td>Global</td><td>Navigate to /templates</td></tr>
+      <tr><td><code>Escape</code></td><td>Any modal</td><td>Close modal (Radix Dialog handles this natively)</td></tr>
+      <tr><td><code>Tab</code></td><td>Grid cell editing</td><td>AG Grid default: move to next cell (right)</td></tr>
+      <tr><td><code>Enter</code></td><td>Grid cell editing</td><td>AG Grid: commit + move down (enterNavigatesVerticallyAfterEdit)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ SECTION 19: AI PROMPTS ═══ -->
+<section id="prompts">
+  <div class="sec-header">
+    <div class="sec-num">// 22</div>
+    <div class="sec-title">AI Coding Assistant Prompt Templates</div>
+    <div class="sec-desc">Use these prompts when working with Cursor, Claude Code, or GitHub Copilot. They reference this spec directly.</div>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>How to use:</strong> Paste these prompts into your AI coding assistant at the start of each feature. Always add "Follow the types in src/types/domain.ts and the store shape in src/store/boqStore.ts" to every prompt.
+  </div>
+
+  <h3>Prompt 1 — Setup</h3>
+  <pre><code>Scaffold a Tauri v2 + React 18 + TypeScript 5 + Vite 5 + Tailwind v4 project called boq-calculator.
+
+Use @tailwindcss/vite plugin (not PostCSS). Install and configure:
+- ag-grid-react ag-grid-community (v31)
+- zustand immer
+- zod
+- @react-pdf/renderer
+- xlsx
+- @tauri-apps/plugin-sql @tauri-apps/plugin-fs @tauri-apps/plugin-dialog
+- date-fns nanoid clsx lucide-react
+- @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-select @radix-ui/react-tooltip
+
+Create the exact folder structure: src/features/ src/lib/ src/store/ src/components/ src/types/
+Create src/types/domain.ts with these exact interfaces: [paste the interfaces from Section 04]
+Create src/lib/constants.ts with VALID_UNITS, DEFAULT_TAX_RATE, AUTOSAVE_DELAY_MS, RATE_CATEGORY_LABELS.
+Create src/lib/db.ts with the Database singleton and rowToProject mapper.
+Run the SQLite migrations from src/lib/migrations.ts on app startup in src/main.tsx.</code></pre>
+
+  <h3>Prompt 2 — Calculation Engine</h3>
+  <pre><code>Create src/lib/calculator.ts as a pure TypeScript module with NO React imports and NO side effects.
+
+Export these functions:
+- round2(n: number): number  — rounds to 2 decimal places
+- calcItemAmount(quantity: number, rate: number): number  — returns round2(q * r), returns 0 if inputs are not finite
+- calcTotals(items: BoqItem[], project: Pick<Project, 'taxRate'|'contingencyRate'|'profitMarginRate'>): BoqTotals
+
+calcTotals must:
+- Group items by section (items between isSectionHeader=true rows)
+- Calculate each section's subtotal
+- Calculate subtotal = sum of all section subtotals
+- Calculate contingencyAmount = round2(subtotal * contingencyRate)
+- Calculate netTotal = round2(subtotal + contingencyAmount)
+- Calculate taxAmount = round2(netTotal * taxRate)
+- Calculate profitAmount = round2(netTotal * profitMarginRate)
+- Calculate grandTotal = round2(netTotal + taxAmount + profitAmount)
+- Return a BoqTotals object
+
+All numbers must be rounded using round2. Types are in src/types/domain.ts.</code></pre>
+
+  <h3>Prompt 3 — BOQ Grid</h3>
+  <pre><code>Create src/features/boq/columnDefs.ts with AG Grid ColDef<BoqItem>[] for the BOQ table.
+
+Columns: itemNo (80px), description (flex 1, min 200px), unit (80px), quantity (100px), rate (120px), amount (130px, not editable), notes (100px).
+
+Rules:
+- quantity, rate, amount, unit cells must return empty string when isSectionHeader=true
+- amount column uses a valueFormatter that calls formatPKR(params.value)
+- amount shows section subtotal for section header rows
+- rate column has cellClassRules: { 'rate-warning': params.data?._hasError }
+- description uses custom cell editor 'DescriptionEditor'
+- unit uses custom cell editor 'UnitEditor'
+- quantity and rate use custom cell editor 'NumericEditor'
+- defaultColDef: sortable=false, filter=false, resizable=true, suppressMovable=true
+- gridOptions: rowDragManaged=true, animateRows=true, stopEditingWhenCellsLoseFocus=true,
+  enterNavigatesVerticallyAfterEdit=true, undoRedoCellEditing=true, undoRedoCellEditingLimit=20,
+  getRowId = String(params.data.id), rowHeight=36, headerHeight=36
+- getRowClass: 'boq-section-header-row' for headers, 'boq-item-row' for normal rows
+- onCellValueChanged: call useBoqStore.getState().updateItem(id, changes)
+
+Types are in src/types/domain.ts.</code></pre>
+
+  <h3>Prompt 4 — Zustand boqStore</h3>
+  <pre><code>Create src/store/boqStore.ts using Zustand with Immer middleware.
+
+The store shape is:
+[paste BoqState interface from Section 05]
+
+Implement these actions:
+- loadProject: query boq_items WHERE project_id=? AND revision_id IS NULL ORDER BY sort_order ASC, map rows to BoqItem[], call recalcTotals
+- addItem(afterId?): create BoqItem with nanoid() id, _isDirty=true, sortOrder = after target row, call scheduleAutosave
+- updateItem(id, changes): immer-update the item, if quantity or rate changed recalc amount, set _isDirty=true, call scheduleAutosave, call recalcTotals
+- deleteItems(ids): remove from state, DELETE from DB where id IN (?), call recalcTotals
+- reorderItems(newOrder): update sortOrder of all items in DB in a transaction
+- recalcTotals: calls calcTotals(items, project) from src/lib/calculator.ts, sets state.totals
+- forceSave: flush all _isDirty items to DB immediately (no debounce), update lastSavedAt
+
+Autosave: use a module-level timer ref (not state). Debounce 500ms. Save only _isDirty items. After save, set _isDirty=false on saved items.
+
+Use src/lib/db.ts getDb() for all database operations.
+Use the types from src/types/domain.ts.</code></pre>
+
+  <h3>Prompt 5 — PDF Export</h3>
+  <pre><code>Create src/features/export/PdfDocument.tsx using @react-pdf/renderer.
+
+It receives props: project: Project, items: BoqItem[], totals: BoqTotals, settings: AppSettings, logoBase64: string | null.
+
+Structure:
+- Page size: A4, orientation: portrait, margins: 15mm all sides
+- Every page has a header: logo left (if logoBase64), company name, "Bill of Quantities" right, project name, page number
+- Every page has a footer: "Prepared by [companyName]", date, page X of Y
+- Page 1: cover with project title (large), client, site, date, totals summary box
+- Pages 2+: BOQ table
+  - Column widths: itemNo=15mm, description=75mm, unit=15mm, quantity=25mm, rate=25mm, amount=25mm
+  - Table header row repeats on each page (using fixed position or repeated View)
+  - Section header rows: full background #e8e8e8, bold text, section subtotal right-aligned in amount column
+  - Normal rows: alternating white/#f9f9f9 background
+  - Amount column: right-aligned, bold
+- Final section: summary table (section subtotals, net total, tax, grand total), signature block
+
+Use formatPKR from src/lib/formatter.ts for all currency values.
+Types in src/types/domain.ts.</code></pre>
+</section>
+
+</main>
+
+<script>
+const secs = document.querySelectorAll('section[id]')
+const links = document.querySelectorAll('#nav a[href^="#"]')
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'))
+      const a = document.querySelector(`#nav a[href="#${e.target.id}"]`)
+      if (a) a.classList.add('active')
+    }
+  })
+}, { rootMargin: '-20% 0px -70% 0px' })
+secs.forEach(s => obs.observe(s))
+</script>
+</body>
+</html>
