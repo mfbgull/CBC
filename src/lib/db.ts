@@ -18,6 +18,8 @@ import type {
   TemplateItem,
   Settings,
 } from '../types/domain';
+import type { ProjectSpec } from '../features/spec/types';
+import type { MilestonePaymentPlan } from '../features/payment/store';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -26,6 +28,8 @@ const STORAGE_KEYS = {
   rates: 'boq_rates',
   templates: 'boq_templates',
   settings: 'boq_settings',
+  specs: 'boq_specs',
+  paymentPlans: 'boq_payment_plans',
 };
 
 // In-memory cache
@@ -137,6 +141,7 @@ export async function createProject(input: ProjectCreateInput): Promise<Project>
     id: maxId + 1,
     name: input.name,
     clientName: input.clientName || '',
+    clientPhone: input.clientPhone || '',
     projectType: input.projectType || 'residential',
     location: input.location || '',
     createdAt: new Date().toISOString(),
@@ -355,4 +360,58 @@ export async function updateSettings(settings: Partial<Settings>): Promise<Setti
   cachedSettings = { ...(cachedSettings || DEFAULT_SETTINGS), ...settings };
   saveToStorage(STORAGE_KEYS.settings, cachedSettings);
   return cachedSettings;
+}
+
+// ============================================
+// PROJECT SPEC OPERATIONS
+// ============================================
+
+export interface ProjectSpecRow {
+  projectId: number;
+  spec: ProjectSpec;
+  updatedAt: string;
+}
+
+export async function getProjectSpec(projectId: number): Promise<ProjectSpec | null> {
+  const allSpecs = loadFromStorage<ProjectSpecRow[]>(STORAGE_KEYS.specs, []);
+  const row = allSpecs.find((s) => s.projectId === projectId);
+  return row?.spec ?? null;
+}
+
+export async function saveProjectSpec(projectId: number, spec: ProjectSpec): Promise<void> {
+  const allSpecs = loadFromStorage<ProjectSpecRow[]>(STORAGE_KEYS.specs, []);
+  const index = allSpecs.findIndex((s) => s.projectId === projectId);
+  const row: ProjectSpecRow = { projectId, spec, updatedAt: new Date().toISOString() };
+  if (index >= 0) {
+    allSpecs[index] = row;
+  } else {
+    allSpecs.push(row);
+  }
+  saveToStorage(STORAGE_KEYS.specs, allSpecs);
+}
+
+export async function deleteProjectSpec(projectId: number): Promise<void> {
+  const allSpecs = loadFromStorage<ProjectSpecRow[]>(STORAGE_KEYS.specs, []);
+  const filtered = allSpecs.filter((s) => s.projectId !== projectId);
+  saveToStorage(STORAGE_KEYS.specs, filtered);
+}
+
+// ============================================
+// PAYMENT PLAN OPERATIONS
+// ============================================
+
+export async function getPaymentPlan(projectId: number): Promise<MilestonePaymentPlan | null> {
+  const allPlans = loadFromStorage<MilestonePaymentPlan[]>(STORAGE_KEYS.paymentPlans, []);
+  return allPlans.find((p) => p.projectId === projectId) ?? null;
+}
+
+export async function savePaymentPlan(plan: MilestonePaymentPlan): Promise<void> {
+  const allPlans = loadFromStorage<MilestonePaymentPlan[]>(STORAGE_KEYS.paymentPlans, []);
+  const index = allPlans.findIndex((p) => p.projectId === plan.projectId);
+  if (index >= 0) {
+    allPlans[index] = plan;
+  } else {
+    allPlans.push(plan);
+  }
+  saveToStorage(STORAGE_KEYS.paymentPlans, allPlans);
 }

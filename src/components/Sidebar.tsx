@@ -14,6 +14,9 @@ const navSections = [
     items: [
       { id: 'projects', label: 'Projects', icon: '◈' },
       { id: 'boq', label: 'BOQ', icon: '▤' },
+      { id: 'spec', label: 'Specification', icon: '📐' },
+      { id: 'report', label: 'Report', icon: '📊' },
+      { id: 'payment', label: 'Payments', icon: '💰' },
       { id: 'rates', label: 'Rates', icon: '◎' },
     ]
   },

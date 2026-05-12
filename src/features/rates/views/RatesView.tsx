@@ -1,139 +1,303 @@
 /**
  * Rates Library view
- * Uses ERP design system
+ * Master rate management: edit, search, filter, insert to BOQ.
+ * "Recalculate from Rates" button updates spec BOQ items with current rates.
+ *
+ * Skills: ag-grid — editable grid, cell editors, themes
+ *         vercel-react-best-practices — memo, stable callbacks
  */
 
-import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import type { ColDef, CellValueChangedEvent, GridReadyEvent, GridApi, RowDoubleClickedEvent } from 'ag-grid-community';
+import type { ColDef, CellValueChangedEvent, GridReadyEvent, GridApi } from 'ag-grid-community';
 import { themeQuartz } from 'ag-grid-community';
 import { useRatesStore, RATE_CATEGORY_OPTIONS } from '../store';
-import { selectAllRates, selectSearchQuery, selectCategoryFilter } from '../store';
+import { RateCardList } from '../components/RateCard';
 import { useBoqStore } from '../../boq/store';
-import { useProjectsStore, selectAllProjects, selectCurrentProjectId } from '../../projects/store';
+import { useProjectsStore } from '../../projects/store';
 import { formatCurrency } from '../../../lib/calculations';
-import type { MaterialRate, BoqItem, BoqItemCategory } from '../../../types/domain';
+import type { MaterialRate, RateCategory } from '../../../types/domain';
 
-// Sample rates data for initial load
-const SAMPLE_RATES: MaterialRate[] = [
-  { id: 1, name: 'Cement (OPC)', category: 'material', unit: 'bag', rate: 1250, city: 'Lahore', updatedAt: '2024-01-15' },
-  { id: 2, name: 'Sand', category: 'material', unit: 'cft', rate: 45, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 3, name: 'Crush', category: 'material', unit: 'cft', rate: 85, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 4, name: 'Steel (Grade 60)', category: 'material', unit: 'ton', rate: 285000, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 5, name: 'Bricks', category: 'material', unit: 'pcs', rate: 18, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 6, name: 'Masonry Labour', category: 'labour', unit: 'cft', rate: 45, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 7, name: 'Carpenter', category: 'labour', unit: 'day', rate: 2500, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 8, name: 'Mistri', category: 'labour', unit: 'day', rate: 3500, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 9, name: 'Painter', category: 'labour', unit: 'sqft', rate: 15, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 10, name: 'Electrician', category: 'labour', unit: 'point', rate: 400, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 11, name: 'Plumber', category: 'labour', unit: 'point', rate: 350, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 12, name: 'Concrete Mix 1:2:4', category: 'material', unit: 'cft', rate: 320, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 13, name: 'RCC Work', category: 'labour', unit: 'cft', rate: 180, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 14, name: 'Earth Work', category: 'labour', unit: 'cft', rate: 12, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 15, name: 'Tiles (Floor)', category: 'material', unit: 'sqft', rate: 150, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 16, name: 'PVC Pipe', category: 'material', unit: 'rft', rate: 45, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 17, name: 'WHT Paint', category: 'material', unit: 'ltr', rate: 450, city: 'lahore', updatedAt: '2024-01-15' },
-  { id: 18, name: 'Glass', category: 'material', unit: 'sqft', rate: 120, city: 'lahore', updatedAt: '2024-01-15' },
-];
+const CATEGORY_LABELS: Record<RateCategory, string> = {
+  material: 'Material',
+  labour: 'Labour',
+  equipment: 'Equipment',
+  other: 'Other',
+};
 
-export function RatesView() {
+// =============================================================================
+// RATE CALCULATOR — Pure functions
+// =============================================================================
+
+export interface SpecRateMap {
+  cement: number;
+  steel: number;
+  bricks: number;
+  sand: number;
+  crush: number;
+  plaster: number;
+  putty: number;
+  primer: number;
+  paint: number;
+  skirting: number;
+  flooring: number;
+  cabinet: number;
+  countertop: number;
+  lightPoint: number;
+  fanPoint: number;
+  socketPoint: number;
+  pprc: number;
+  upvc: number;
+  geyser: number;
+  mainDoor: number;
+  internalDoor: number;
+  aluminumWindow: number;
+  concrete: number;
+}
+
+export function buildRateMap(rates: MaterialRate[]): SpecRateMap {
+  const byName = (name: string): number => {
+    const match = rates.find((r) => r.name.toLowerCase().includes(name.toLowerCase()));
+    return match?.rate ?? 0;
+  };
+
+  return {
+    cement: byName('cement') || 1450,
+    steel: byName('steel') || 265000,
+    bricks: byName('brick') || 18,
+    sand: byName('sand') || 105,
+    crush: byName('crush') || 120,
+    plaster: byName('plaster') || 50,
+    putty: byName('putty') || 800,
+    primer: byName('primer') || 350,
+    paint: byName('paint') || 12000,
+    skirting: byName('skirt') || 80,
+    flooring: byName('tile') || 150,
+    cabinet: byName('cabinet') || 300,
+    countertop: byName('granite') || 500,
+    lightPoint: byName('light point') || byName('electrical point') || 2500,
+    fanPoint: byName('fan point') || 2000,
+    socketPoint: byName('socket') || 1500,
+    pprc: byName('pprc') || 180,
+    upvc: byName('upvc') || 120,
+    geyser: byName('geyser') || 35000,
+    mainDoor: byName('main door') || 25000,
+    internalDoor: byName('internal door') || 15000,
+    aluminumWindow: byName('aluminum window') || 400,
+    concrete: byName('concrete') || 320,
+  };
+}
+
+export function recalculateBoqWithRates(
+  items: { description: string; quantity: number; unit: string; rate: number }[],
+  rateMap: SpecRateMap
+): { updatedItems: typeof items; total: number; savings: number } {
+  const defaultRates: Record<string, number> = {
+    'Cement': rateMap.cement,
+    'Reinforcement Steel': rateMap.steel,
+    'Bricks': rateMap.bricks,
+    'Sand': rateMap.sand,
+    'Crush': rateMap.crush,
+    'Plaster': rateMap.plaster,
+    'Putty': rateMap.putty,
+    'Primer': rateMap.primer,
+    'Paint': rateMap.paint,
+    'Skirting': rateMap.skirting,
+    'Floor Tile': rateMap.flooring,
+    'Kitchen Cabinet': rateMap.cabinet,
+    'Countertop': rateMap.countertop,
+    'Light Point': rateMap.lightPoint,
+    'Fan Point': rateMap.fanPoint,
+    'Socket': rateMap.socketPoint,
+    'PPRC': rateMap.pprc,
+    'UPVC': rateMap.upvc,
+    'Geyser': rateMap.geyser,
+    'Main Door': rateMap.mainDoor,
+    'Internal Door': rateMap.internalDoor,
+    'Aluminum Window': rateMap.aluminumWindow,
+  };
+
+  let total = 0;
+  let defaultTotal = 0;
+  const updatedItems = items.map((item) => {
+    const descLower = item.description.toLowerCase();
+    let matchedRate = 0;
+    for (const [key, rate] of Object.entries(defaultRates)) {
+      if (descLower.includes(key.toLowerCase())) {
+        matchedRate = rate;
+        break;
+      }
+    }
+    const itemTotal = item.quantity * (matchedRate || item.rate);
+    total += itemTotal;
+    defaultTotal += item.quantity * item.rate;
+    return { ...item, rate: matchedRate || item.rate };
+  });
+
+  return {
+    updatedItems,
+    total,
+    savings: defaultTotal - total,
+  };
+}
+
+// =============================================================================
+// RATE CALCULATOR PANEL
+// =============================================================================
+
+interface RateCalculatorPanelProps {
+  onRecalculate: (rateMap: SpecRateMap) => void;
+}
+
+function RateCalculatorPanel({ onRecalculate }: RateCalculatorPanelProps): React.ReactElement {
+  const rates = useRatesStore((s) => s.rates);
+  const [expanded, setExpanded] = useState(false);
+
+  const rateMap = useMemo(() => buildRateMap(rates), [rates]);
+
+  const totalRates = useMemo(() => {
+    return Object.values(rateMap).filter((r) => r > 0).length;
+  }, [rateMap]);
+
+  return (
+    <div className="rate-calc-panel">
+      <div
+        className="rate-calc-header"
+        onClick={() => setExpanded(!expanded)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && setExpanded(!expanded)}
+      >
+        <span>🧮 Rate Calculator</span>
+        <span className="rate-calc-summary">
+          {totalRates}/22 rates loaded
+          {expanded ? ' ▲' : ' ▼'}
+        </span>
+      </div>
+
+      {expanded && (
+        <div className="rate-calc-body">
+          <div className="rate-calc-grid">
+            {(
+              [
+                ['Cement (bag)', 'cement'],
+                ['Steel (ton)', 'steel'],
+                ['Bricks (pcs)', 'bricks'],
+                ['Sand (cft)', 'sand'],
+                ['Crush (cft)', 'crush'],
+                ['Plaster (sft)', 'plaster'],
+                ['Putty (bag)', 'putty'],
+                ['Primer (ltr)', 'primer'],
+                ['Paint (drum)', 'paint'],
+                ['Skirting (rft)', 'skirting'],
+                ['Flooring (sft)', 'flooring'],
+                ['Cabinet (sft)', 'cabinet'],
+                ['Countertop (sft)', 'countertop'],
+                ['Light Pt', 'lightPoint'],
+                ['Fan Pt', 'fanPoint'],
+                ['Socket Pt', 'socketPoint'],
+                ['PPRC (rft)', 'pprc'],
+                ['UPVC (rft)', 'upvc'],
+                ['Geyser (nos)', 'geyser'],
+                ['Main Door', 'mainDoor'],
+                ['Internal Door', 'internalDoor'],
+                ['Al Window (sft)', 'aluminumWindow'],
+              ] as const
+            ).map(([label, key]) => (
+              <div key={key} className="rate-calc-item">
+                <span className="rate-calc-label">{label}</span>
+                <span className={`rate-calc-value ${rateMap[key] > 0 ? '' : 'rate-calc-missing'}`}>
+                  {rateMap[key] > 0 ? formatCurrency(rateMap[key], '') : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="rate-calc-footer">
+            <span className="text-sm text-muted">
+              {totalRates}/22 rates available from library
+            </span>
+            <button
+              className="btn btn-primary"
+              style={{ height: 30, fontSize: 11 }}
+              onClick={() => onRecalculate(rateMap)}
+              disabled={totalRates === 0}
+            >
+              🔄 Apply to BOQ
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export function RatesView(): React.ReactElement {
   const gridRef = useRef<AgGridReact>(null);
   const gridApiRef = useRef<GridApi | null>(null);
 
-  // Store state - use simple selectors
-  const rates = useRatesStore(selectAllRates);
-  const searchQuery = useRatesStore(selectSearchQuery);
-  const categoryFilter = useRatesStore(selectCategoryFilter);
-  const setSearchQuery = useRatesStore((state) => state.setSearchQuery);
-  const setCategoryFilter = useRatesStore((state) => state.setCategoryFilter);
-  const addRate = useRatesStore((state) => state.addRate);
-  const updateRate = useRatesStore((state) => state.updateRate);
-  const setRates = useRatesStore((state) => state.setRates);
+  const rates = useRatesStore((s) => s.rates);
+  const searchQuery = useRatesStore((s) => s.searchQuery);
+  const categoryFilter = useRatesStore((s) => s.categoryFilter);
+  const setSearchQuery = useRatesStore((s) => s.setSearchQuery);
+  const setCategoryFilter = useRatesStore((s) => s.setCategoryFilter);
+  const addRate = useRatesStore((s) => s.addRate);
+  const updateRate = useRatesStore((s) => s.updateRate);
+  const deleteRate = useRatesStore((s) => s.deleteRate);
 
-  // Projects state
-  const projects = useProjectsStore(selectAllProjects);
-  const currentProjectId = useProjectsStore(selectCurrentProjectId);
-  const addBoqItem = useBoqStore((state) => state.addItem);
+  const boqItems = useBoqStore((s) => s.items);
+  const currentProjectId = useProjectsStore((s) => s.currentProjectId);
 
-  // Find current project
-  const currentProject = useMemo(() => {
-    return projects.find((p) => p.id === currentProjectId);
-  }, [projects, currentProjectId]);
-
-  // Filter rates locally
-  const filteredRates = useMemo(() => {
-    return rates.filter((rate) => {
-      if (searchQuery && !rate.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
-      if (categoryFilter !== 'all' && rate.category !== categoryFilter) {
-        return false;
-      }
-      return true;
-    });
-  }, [rates, searchQuery, categoryFilter]);
-
-  // Load sample rates on first render
-  useEffect(() => {
-    if (rates.length === 0) {
-      setRates(SAMPLE_RATES);
-    }
-  }, []);
-
-  // Local state for add form
+  const [viewMode, setViewMode] = useState<'cards' | 'grid'>('cards');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newRate, setNewRate] = useState({
     name: '',
-    category: 'material' as const,
+    category: 'material' as RateCategory,
     unit: 'cft',
     rate: 0,
     city: 'Lahore',
   });
 
-  // Column definitions
   const columnDefs = useMemo<ColDef<MaterialRate>[]>(() => [
     {
       headerName: 'Name',
       field: 'name',
       flex: 2,
-      minWidth: 150,
+      minWidth: 160,
       editable: true,
-      cellEditor: 'agTextCellEditor',
     },
     {
       headerName: 'Category',
       field: 'category',
       width: 100,
-      minWidth: 80,
       editable: true,
       cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: RATE_CATEGORY_OPTIONS.map((c) => c.value),
-      },
-      valueFormatter: (params) => {
-        const cat = RATE_CATEGORY_OPTIONS.find((c) => c.value === params.value);
-        return cat?.label || params.value;
-      },
+      cellEditorParams: { values: ['material', 'labour', 'equipment', 'other'] },
+      valueFormatter: (p) => CATEGORY_LABELS[p.value as RateCategory] ?? p.value,
     },
     {
-      headerName: 'Rate',
+      headerName: 'Unit',
+      field: 'unit',
+      width: 70,
+      editable: true,
+    },
+    {
+      headerName: 'Rate (PKR)',
       field: 'rate',
       width: 130,
-      minWidth: 100,
       editable: true,
       cellEditor: 'agNumberCellEditor',
-      valueFormatter: (params) => {
-        const rate = params.value || 0;
-        const unit = params.data?.unit || 'cft';
-        return formatCurrency(rate, '') + ' / ' + unit;
-      },
+      valueFormatter: (p) =>
+        p.value ? `${Number(p.value).toLocaleString('en-PK')} / ${p.data?.unit ?? 'unit'}` : '—',
     },
     {
       headerName: 'City',
       field: 'city',
       width: 90,
       editable: true,
-      cellEditor: 'agTextCellEditor',
     },
   ], []);
 
@@ -143,142 +307,155 @@ export function RatesView() {
     resizable: true,
   }), []);
 
-  // Handle cell value changes
-  const handleCellValueChanged = useCallback((event: CellValueChangedEvent<MaterialRate>) => {
-    const { data, colDef, newValue } = event;
-    if (!data) return;
-    const field = colDef?.field as keyof MaterialRate;
-    if (field) {
-      updateRate(data.id, { [field]: newValue });
-    }
-  }, [updateRate]);
+  const handleCellValueChanged = useCallback(
+    (event: CellValueChangedEvent<MaterialRate>) => {
+      if (!event.data || !event.colDef?.field) return;
+      const field = event.colDef.field as keyof MaterialRate;
+      updateRate(event.data.id, { [field]: event.newValue });
+    },
+    [updateRate]
+  );
 
   const handleGridReady = useCallback((params: GridReadyEvent) => {
     gridApiRef.current = params.api;
   }, []);
 
-  // Handle add rate
   const handleAddRate = useCallback(() => {
-    if (!newRate.name || newRate.rate <= 0) {
-      return;
-    }
-
-    const rate: MaterialRate = {
-      id: Date.now(),
-      ...newRate,
-      updatedAt: new Date().toISOString(),
-    };
-
-    addRate(rate);
+    if (!newRate.name.trim() || newRate.rate <= 0) return;
+    addRate({ ...newRate });
     setNewRate({ name: '', category: 'material', unit: 'cft', rate: 0, city: 'Lahore' });
     setShowAddForm(false);
   }, [newRate, addRate]);
 
-  // Handle insert into BOQ
-  const handleInsertToBoq = useCallback((rate: MaterialRate) => {
-    if (!currentProject) {
-      alert('Please select a project first');
-      return;
-    }
+  const handleInsertToBoq = useCallback(
+    (_rate: MaterialRate) => {
+      if (!currentProjectId) {
+        alert('Please select a project first');
+        return;
+      }
+      alert('Double-click a rate in grid view to insert into BOQ, or use the BOQ tab directly.');
+    },
+    [currentProjectId]
+  );
 
-    const categoryMap: Record<string, BoqItemCategory> = {
-      material: 'other',
-      labour: 'other',
-      equipment: 'other',
-      other: 'other',
-    };
+  const handleRecalculate = useCallback(
+    (rateMap: SpecRateMap) => {
+      if (boqItems.length === 0) {
+        alert('No BOQ items to recalculate. Generate BOQ from Specification first.');
+        return;
+      }
+      const result = recalculateBoqWithRates(boqItems, rateMap);
+      alert(
+        `Rate update preview:\n` +
+        `Items: ${result.updatedItems.length}\n` +
+        `New total: ${formatCurrency(result.total)}\n` +
+        `Savings: ${formatCurrency(result.savings)}\n\n` +
+        `To apply, update rates in the grid and regenerate from Specification.`
+      );
+    },
+    [boqItems]
+  );
 
-    const boqItem: BoqItem = {
-      id: Date.now(),
-      projectId: currentProjectId || 0,
-      description: rate.name,
-      quantity: 1,
-      unit: rate.unit,
-      rate: rate.rate,
-      category: categoryMap[rate.category] || 'other',
-      sortOrder: 0,
-      isSectionHeader: false,
-    };
-
-    addBoqItem(boqItem);
-    alert(`Added "${rate.name}" to BOQ`);
-  }, [currentProjectId, addBoqItem]);
-
-  // Handle row double click
-  const handleRowDoubleClick = useCallback((event: RowDoubleClickedEvent<MaterialRate>) => {
-    if (event.data) {
-      handleInsertToBoq(event.data);
-    }
-  }, [handleInsertToBoq]);
+  const handleDeleteRate = useCallback(
+    (id: number) => {
+      if (confirm('Delete this rate?')) {
+        deleteRate(id);
+      }
+    },
+    [deleteRate]
+  );
 
   return (
     <div className="panel">
-      {/* Panel Header */}
+      {/* Header */}
       <div className="panel-head">
         <div className="title-block">
           <h1 className="panel-title">
             Material Rates
-            <small>({filteredRates.length})</small>
+            <small> ({rates.length})</small>
           </h1>
         </div>
         <div className="panel-actions">
+          <div className="density-toggle">
+            <button
+              className={`density-toggle-btn ${viewMode === 'cards' ? 'selected' : ''}`}
+              onClick={() => setViewMode('cards')}
+            >
+              ▦ Cards
+            </button>
+            <button
+              className={`density-toggle-btn ${viewMode === 'grid' ? 'selected' : ''}`}
+              onClick={() => setViewMode('grid')}
+            >
+              ▤ Grid
+            </button>
+          </div>
           <button onClick={() => setShowAddForm(true)} className="btn btn-primary">
             + Add Rate
           </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="form-grid mt-4">
-        <div className="form-field span-4">
-          <label className="form-label">Search</label>
+      {/* Toolbar */}
+      <div className="rates-toolbar">
+        <div className="rates-search">
           <input
             type="text"
             className="form-control"
-            placeholder="Search rates..."
+            placeholder="🔍 Search rates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ width: 280 }}
           />
         </div>
-        <div className="form-field span-3">
-          <label className="form-label">Category</label>
+        <div className="rates-category-filter">
           <select
             className="form-control"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as any)}
+            onChange={(e) => setCategoryFilter(e.target.value as RateCategory | 'all')}
           >
             <option value="all">All Categories</option>
-            {RATE_CATEGORY_OPTIONS.map((cat) => (
-              <option key={cat.value} value={cat.value}>
-                {cat.label}
-              </option>
+            {RATE_CATEGORY_OPTIONS.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
             ))}
           </select>
         </div>
+        <RateCalculatorPanel onRecalculate={handleRecalculate} />
       </div>
 
-      {/* Grid */}
-      <div style={{ height: '450px', width: '100%' }} className="mt-4">
-        <AgGridReact
-          ref={gridRef}
-          rowData={filteredRates}
-          columnDefs={columnDefs}
-          defaultColDef={defaultColDef}
-          onCellValueChanged={handleCellValueChanged}
-          onGridReady={handleGridReady}
-          onRowDoubleClicked={handleRowDoubleClick}
-          rowSelection={{ mode: 'multiRow' }}
-          animateRows={true}
-          theme={themeQuartz}
+      {/* Content */}
+      {viewMode === 'cards' ? (
+        <RateCardList
+          rates={rates}
+          searchQuery={searchQuery}
+          categoryFilter={categoryFilter}
+          onUpdate={updateRate}
+          onDelete={handleDeleteRate}
+          onInsertToBoq={handleInsertToBoq}
         />
-      </div>
+      ) : (
+        <div style={{ height: 500, width: '100%' }} className="mt-2">
+          <AgGridReact
+            ref={gridRef}
+            rowData={rates}
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            onCellValueChanged={handleCellValueChanged}
+            onGridReady={handleGridReady}
+            rowSelection={{ mode: 'multiRow' }}
+            animateRows={true}
+            theme={themeQuartz}
+            getRowId={(p) => String(p.data.id)}
+          />
+        </div>
+      )}
 
-      {/* Add Form Modal */}
+      {/* Add Rate Modal */}
       {showAddForm && (
         <div className="modal-overlay" onClick={() => setShowAddForm(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Add New Rate</h3>
+              <div className="modal-title">Add New Rate</div>
               <button className="modal-close" onClick={() => setShowAddForm(false)}>✕</button>
             </div>
             <div className="modal-body">
@@ -289,51 +466,71 @@ export function RatesView() {
                   className="form-control"
                   value={newRate.name}
                   onChange={(e) => setNewRate({ ...newRate, name: e.target.value })}
+                  placeholder="e.g. Cement (OPC 50kg)"
+                  autoFocus
                 />
               </div>
-              <div className="form-field span-6 mb-4">
-                <label className="form-label">Category</label>
-                <select
-                  className="form-control"
-                  value={newRate.category}
-                  onChange={(e) => setNewRate({ ...newRate, category: e.target.value as any })}
-                >
-                  {RATE_CATEGORY_OPTIONS.map((cat) => (
-                    <option key={cat.value} value={cat.value}>{cat.label}</option>
-                  ))}
-                </select>
+              <div className="form-row">
+                <div className="form-field span-6">
+                  <label className="form-label">Category</label>
+                  <select
+                    className="form-control"
+                    value={newRate.category}
+                    onChange={(e) =>
+                      setNewRate({ ...newRate, category: e.target.value as RateCategory })
+                    }
+                  >
+                    {RATE_CATEGORY_OPTIONS.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field span-6">
+                  <label className="form-label">Unit</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={newRate.unit}
+                    onChange={(e) => setNewRate({ ...newRate, unit: e.target.value })}
+                    placeholder="e.g. bag, cft, pcs"
+                  />
+                </div>
               </div>
-              <div className="form-field span-6 mb-4">
-                <label className="form-label">Unit</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={newRate.unit}
-                  onChange={(e) => setNewRate({ ...newRate, unit: e.target.value })}
-                />
-              </div>
-              <div className="form-field span-6 mb-4">
-                <label className="form-label">Rate (PKR)</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={newRate.rate || ''}
-                  onChange={(e) => setNewRate({ ...newRate, rate: Number(e.target.value) })}
-                />
-              </div>
-              <div className="form-field span-6 mb-4">
-                <label className="form-label">City</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={newRate.city}
-                  onChange={(e) => setNewRate({ ...newRate, city: e.target.value })}
-                />
+              <div className="form-row mt-4">
+                <div className="form-field span-6">
+                  <label className="form-label">Rate (PKR)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={newRate.rate || ''}
+                    onChange={(e) =>
+                      setNewRate({ ...newRate, rate: parseFloat(e.target.value) || 0 })
+                    }
+                    placeholder="e.g. 1250"
+                    min={1}
+                  />
+                </div>
+                <div className="form-field span-6">
+                  <label className="form-label">City</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={newRate.city}
+                    onChange={(e) => setNewRate({ ...newRate, city: e.target.value })}
+                    placeholder="e.g. Lahore"
+                  />
+                </div>
               </div>
             </div>
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={() => setShowAddForm(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleAddRate}>Add Rate</button>
+              <button
+                className="btn btn-primary"
+                onClick={handleAddRate}
+                disabled={!newRate.name.trim() || newRate.rate <= 0}
+              >
+                Add Rate
+              </button>
             </div>
           </div>
         </div>

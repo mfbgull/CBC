@@ -72,6 +72,7 @@ interface BoqState {
   validate: () => BoqValidationResult;
   loadForProject: (projectId: number) => Promise<void>;
   clearProject: () => void;
+  clearItems: () => void;
 }
 
 // Debounce helper for autosave
@@ -317,15 +318,15 @@ export const useBoqStore = create<BoqState>()((set, get) => ({
   clearProject: () => {
     set({
       items: [],
-      currentProjectId: null,
       isDirty: false,
       lastSaved: null,
       selectedItemIds: [],
     });
-    // Clear any pending save timeouts
     saveTimeouts.forEach((timeout) => clearTimeout(timeout));
     saveTimeouts.clear();
   },
+
+  clearItems: () => set({ items: [], isDirty: false, selectedItemIds: [] }),
 }));
 
 // Simple selectors

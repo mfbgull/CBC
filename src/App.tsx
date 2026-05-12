@@ -9,6 +9,9 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { ProjectsView } from './features/projects/views/ProjectsView';
 import { BoqView } from './features/boq/views/BoqView';
+import { SpecView } from './features/spec/views/SpecView';
+import { ReportView } from './features/report/views/ReportView';
+import { PaymentPlanView } from './features/payment/views/PaymentPlanView';
 import { RatesView } from './features/rates/views/RatesView';
 import { TemplatesView } from './features/templates/views/TemplatesView';
 import { ExportView } from './features/export/views/ExportView';
@@ -21,7 +24,7 @@ import { useRatesStore } from './features/rates/store';
 import { useTemplatesStore } from './features/templates/store';
 import { useSettingsStore } from './features/settings/store';
 
-type ViewType = 'projects' | 'boq' | 'rates' | 'templates' | 'export' | 'settings';
+type ViewType = 'projects' | 'boq' | 'spec' | 'report' | 'payment' | 'rates' | 'templates' | 'export' | 'settings';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('projects');
@@ -45,7 +48,7 @@ function App() {
         console.log('Initializing database...');
         await initDatabase();
         console.log('Database initialized, loading data...');
-        
+
         // Initialize all stores
         await Promise.all([
           initProjects(),
@@ -53,7 +56,7 @@ function App() {
           initTemplates(),
           initSettings(),
         ]);
-        
+
         console.log('All data loaded');
         setIsDbInitialized(true);
       } catch (error) {
@@ -79,13 +82,10 @@ function App() {
   const handleProjectSelect = useCallback((projectId: number) => {
     const setCurrentProject = useProjectsStore.getState().setCurrentProject;
     setCurrentProject(projectId);
-    setCurrentView('boq');
+    setCurrentView('spec');
   }, []);
 
-  // handleCreateProject is handled in ProjectsView
-
   const renderView = () => {
-    // Show loading while database initializes
     if (!isDbInitialized) {
       return (
         <div className="loading-screen">
@@ -98,13 +98,15 @@ function App() {
 
     switch (currentView) {
       case 'projects':
-        return (
-          <ProjectsView
-            onProjectSelect={handleProjectSelect}
-          />
-        );
+        return <ProjectsView onProjectSelect={handleProjectSelect} />;
       case 'boq':
         return <BoqView />;
+      case 'spec':
+        return <SpecView />;
+      case 'report':
+        return <ReportView />;
+      case 'payment':
+        return <PaymentPlanView />;
       case 'rates':
         return <RatesView />;
       case 'templates':
@@ -118,9 +120,7 @@ function App() {
           <div className="empty-state">
             <div className="empty-state-icon">◫</div>
             <div className="empty-state-title">Coming Soon</div>
-            <div className="empty-state-desc">
-              This feature is under development
-            </div>
+            <div className="empty-state-desc">This feature is under development</div>
           </div>
         );
     }
@@ -129,14 +129,14 @@ function App() {
   return (
     <div className="app-container">
       <Sidebar currentView={currentView} onViewChange={handleViewChange} />
-      
+
       <div className="main-content">
         <Header />
-        
+
         <div className="content">
           {renderView()}
         </div>
-        
+
         <ToastContainer />
       </div>
     </div>
