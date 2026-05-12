@@ -42,7 +42,8 @@ coverage/
 *.tmp
 .temp/
 
-# Docs generated outputs
+# Docs
+docs/archive/
 docs/*.html
 docs/*.tsx
 !docs/template.html
