@@ -121,9 +121,10 @@ interface RoomCardProps {
   floorId: string;
   room: RoomSpec;
   children?: ReactNode;
+  onEditWalls?: () => void;
 }
 
-function RoomCard({ floorId, room, children }: RoomCardProps): ReactElement {
+function RoomCard({ floorId, room, children, onEditWalls }: RoomCardProps): ReactElement {
   const { removeRoom, updateRoom } = useSpecEditorContext();
 
   const area = room.l * room.w;
@@ -142,6 +143,15 @@ function RoomCard({ floorId, room, children }: RoomCardProps): ReactElement {
         <span className="spec-room-area text-muted text-sm">
           {area.toFixed(0)} ft²
         </span>
+        {onEditWalls && (
+          <button
+            onClick={onEditWalls}
+            className="spec-btn-icon text-blue-500 hover:text-blue-700"
+            title="Edit walls"
+          >
+            🧱
+          </button>
+        )}
         <button
           onClick={() => removeRoom(floorId, room.id)}
           className="spec-btn-icon text-slate-300 hover:text-red-500"

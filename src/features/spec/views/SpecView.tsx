@@ -9,14 +9,16 @@
  * Skill: vercel-react-best-practices — render optimization
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSpecStore } from '../store';
 import { useBoqStore } from '../../boq/store';
 import { useProjectsStore } from '../../projects/store';
 import { SpecEditor } from '../components/SpecEditor';
+import { WallPanel } from '../../walls/components/WallPanel';
 import { calculateProject } from '../calculations';
 import { formatCurrency } from '../../../lib/calculations';
 import type { FloorSpec } from '../types';
+import { useWallStore, generateWallsForRoom } from '../../walls';
 
 // =============================================================================
 // SPEC VIEW
@@ -41,6 +43,13 @@ export function SpecView(): React.ReactElement {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [generationMessage, setGenerationMessage] = useState<string | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [showWallPanel, setShowWallPanel] = useState(false);
+
+  // Wall store
+  const wallStore = useWallStore();
+  const initWalls = wallStore.initWalls;
+  const walls = wallStore.walls;
 
   // Load saved spec when project changes
   useEffect(() => {
@@ -56,14 +65,59 @@ export function SpecView(): React.ReactElement {
     })();
   }, [currentProjectId]);
 
-  // Recalculate on spec change
+  // Generate walls when spec changes
+  useEffect(() => {
+    if (!spec) return;
+    
+    // Build room list for wall store
+    const roomInfos = spec.floors.flatMap((floor) =>
+      floor.rooms.map((room) => ({
+        id: room.id,
+        name: room.name,
+        height: room.h * 0.3048, // feet to metres
+      }))
+    );
+    
+    // Generate walls for all rooms
+    const newWalls: ReturnType<typeof generateWallsForRoom>[] = [];
+    for (const room of spec.floors.flatMap((f) => f.rooms)) {
+      const roomWalls = generateWallsForRoom(room, String(currentProjectId), newWalls.flatMap((w) => w.map((wall) => wall.label)));
+      newWalls.push(roomWalls);
+    }
+    
+    // Flatten and initialize
+    const allWalls = newWalls.flat();
+    initWalls(allWalls, roomInfos);
+  }, [spec?.id]); // Only re-generate when spec ID changes (not on every room update)
+
+  // ── Recalculate on spec change ──────────────────────────────────────────────
+
   useEffect(() => {
     if (!spec) return;
     const result = calculateProject(spec);
     setSummary(result);
   }, [spec]);
 
-  // ── Save Spec ────────────────────────────────────────────────────────────
+  // ── Room Selection for Wall Editing ────────────────────────────────────
+
+  const allRooms = useMemo(() => {
+    return spec?.floors.flatMap((f) => 
+      f.rooms.map((r) => ({ id: r.id, name: r.name, floorId: f.id, room: r }))
+    ) ?? [];
+  }, [spec]);
+
+  const selectedRoom = useMemo(() => {
+    return allRooms.find((r) => r.id === selectedRoomId);
+  }, [allRooms, selectedRoomId]);
+
+  const handleSelectRoom = useCallback((roomId: string) => {
+    setSelectedRoomId(roomId);
+    setShowWallPanel(true);
+  }, []);
+
+  const handleCloseWallPanel = useCallback(() => {
+    setShowWallPanel(false);
+  }, []);
 
   const handleSaveSpec = useCallback(async () => {
     if (!currentProjectId || !spec) return;
@@ -78,7 +132,7 @@ export function SpecView(): React.ReactElement {
     }
   }, [currentProjectId, spec]);
 
-  // ── Generate BOQ ───────────────────────────────────────────────────────────
+  // ── Save Spec ────────────────────────────────────────────────────────────
 
   const handleGenerateBOQ = useCallback(async () => {
     if (!currentProjectId) return;
@@ -195,12 +249,37 @@ export function SpecView(): React.ReactElement {
       {/* Compound Component Editor */}
       <SpecEditor.Provider>
         <div className="spec-editor-body">
+          {/* Toolbar for wall panel */}
+          {allRooms.length > 0 && (
+            <div className="flex items-center justify-between mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-blue-800">🧱 Wall Management</span>
+                <span className="text-xs text-blue-600">{walls.length} walls total</span>
+              </div>
+              <select
+                value={selectedRoomId ?? ''}
+                onChange={(e) => e.target.value && handleSelectRoom(e.target.value)}
+                className="text-sm border rounded px-3 py-1.5 bg-white"
+              >
+                <option value="">-- Select a room to edit walls --</option>
+                {allRooms.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Floors */}
           {spec.floors.map((floor: FloorSpec) => (
             <SpecEditor.Floor key={floor.id} floor={floor}>
               {/* Rooms */}
               {floor.rooms.map((room) => (
-                <SpecEditor.RoomCard key={room.id} floorId={floor.id} room={room}>
+                <SpecEditor.RoomCard 
+                  key={room.id} 
+                  floorId={floor.id} 
+                  room={room}
+                  onEditWalls={() => handleSelectRoom(room.id)}
+                >
                   {/* Openings inline */}
                   <SpecEditor.AddOpening floorId={floor.id} roomId={room.id} />
                 </SpecEditor.RoomCard>
@@ -215,6 +294,38 @@ export function SpecView(): React.ReactElement {
           <SpecEditor.AddFloor />
         </div>
       </SpecEditor.Provider>
+
+      {/* Wall Panel (slide-out) */}
+      {showWallPanel && selectedRoom && (
+        <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-xl z-40 overflow-auto">
+          <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
+            <h2 className="font-bold text-slate-800">
+              🧱 Wall Editor — {selectedRoom.name}
+            </h2>
+            <button
+              onClick={handleCloseWallPanel}
+              className="px-4 py-2 text-slate-600 hover:bg-gray-100 rounded"
+            >
+              ✕ Close
+            </button>
+          </div>
+          <div className="p-4">
+            <WallPanel
+              roomId={selectedRoom.id}
+              roomName={selectedRoom.name}
+              allRooms={allRooms.map((r) => ({ id: r.id, name: r.name }))}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Backdrop */}
+      {showWallPanel && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-30"
+          onClick={handleCloseWallPanel}
+        />
+      )}
 
       {/* Cost Summary Panel */}
       {summary && (
