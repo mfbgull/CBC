@@ -326,6 +326,7 @@ function AddOpening({ floorId, roomId }: AddOpeningProps): ReactElement {
 
   const addDoor = () => {
     if (!room) return;
+    if (addMatchingOpening('door', parseFloat(doorW) || 3, parseFloat(doorH) || 7)) return;
     const opening = {
       id: crypto.randomUUID(), type: 'door' as const,
       width: parseFloat(doorW) || 3, height: parseFloat(doorH) || 7,
@@ -336,12 +337,28 @@ function AddOpening({ floorId, roomId }: AddOpeningProps): ReactElement {
 
   const addWindow = () => {
     if (!room) return;
+    if (addMatchingOpening('window', parseFloat(windowW) || 4, parseFloat(windowH) || 3)) return;
     const opening = {
       id: crypto.randomUUID(), type: 'window' as const,
       width: parseFloat(windowW) || 4, height: parseFloat(windowH) || 3,
       count: parseInt(count) || 1,
     };
     updateRoom(floorId, roomId, { openings: [...room.openings, opening] });
+  };
+
+  const addMatchingOpening = (type: 'door' | 'window', width: number, height: number): boolean => {
+    if (!room) return false;
+    const match = room.openings.find(
+      (o) => o.type === type && o.width === width && o.height === height
+    );
+    if (!match) return false;
+    const newCount = (match.count ?? 1) + (parseInt(count) || 1);
+    updateRoom(floorId, roomId, {
+      openings: room.openings.map((o) =>
+        o.id === match.id ? { ...o, count: newCount } : o
+      ),
+    });
+    return true;
   };
 
   const removeOpening = (openingId: string) => {
