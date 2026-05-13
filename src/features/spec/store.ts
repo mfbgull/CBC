@@ -67,6 +67,7 @@ export interface SpecState {
   // Calculation
   recalculate: () => void;
   setStructuralSystem: (system: StructuralSystem) => void;
+  markSpecClean: () => void;
   generateBoqItems: () => BoqItemCreateInput[];
   clearSpec: () => void;
   setError: (error: string | null) => void;
@@ -453,6 +454,10 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     } catch (error) {
       console.error('Calculation failed:', error);
     }
+  },
+
+  markSpecClean: () => {
+    set({ isDirty: false });
   },
 
   generateBoqItems: () => {

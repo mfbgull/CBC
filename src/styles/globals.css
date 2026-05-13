@@ -1865,7 +1865,7 @@ textarea.form-control {
   border-radius: var(--radius-sm);
   padding: 8px 10px;
   transition: box-shadow 0.15s ease;
-  min-width: 240px;
+  min-width: 260px;
   max-width: 320px;
   flex: 1 1 260px;
 }
@@ -1947,7 +1947,7 @@ textarea.form-control {
 
 .spec-field-input {
   height: 26px;
-  width: 60px;
+  width: 52px;
   padding: 0 4px;
   border: 1px solid var(--line);
   border-radius: 5px;
@@ -1969,7 +1969,7 @@ textarea.form-control {
 /* Type select gets more width */
 .spec-field-input[type="select"],
 .spec-room-dims .spec-field:has(select) .spec-field-input {
-  width: 90px;
+  width: 78px;
 }
 
 /* ========================================

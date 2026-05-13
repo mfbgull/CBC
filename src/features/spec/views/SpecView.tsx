@@ -132,6 +132,7 @@ export function SpecView(): React.ReactElement {
     try {
       const { saveProjectSpec } = await import('../../../lib/db');
       await saveProjectSpec(currentProjectId, spec);
+      useSpecStore.getState().markSpecClean();
     } catch (err) {
       console.error('Failed to save spec:', err);
     } finally {
