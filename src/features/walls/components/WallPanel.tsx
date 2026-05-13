@@ -11,7 +11,7 @@
  * This is designed to be placed within or alongside the SpecEditor.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useWallStore } from '../store';
 import type { 
   Wall, 
@@ -42,6 +42,10 @@ export interface WallPanelProps {
   onWallChange?: (wallId: string) => void;
   /** Called when user wants to add a new wall */
   onAddWall?: () => void;
+  /** Called when user wants to edit a wall */
+  onEditWall?: (wallId: string) => void;
+  /** Called when edit popup opens/closes — lets parent hide backdrop */
+  onEditPopupOpen?: (isOpen: boolean) => void;
 }
 
 // =============================================================================
@@ -79,6 +83,8 @@ interface WallCardProps {
   onLinkRoom?: (roomId: string) => void;
   /** All rooms for link dropdown */
   availableRooms?: Array<{ id: string; name: string }>;
+  /** Called when user wants to edit this wall */
+  onEdit?: () => void;
 }
 
 function WallCard({
@@ -90,6 +96,7 @@ function WallCard({
   onUpdateFinish,
   onUpdateSpaceType,
   onLinkRoom,
+  onEdit,
   availableRooms = [],
 }: WallCardProps) {
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -111,9 +118,20 @@ function WallCard({
             {wall.length.toFixed(2)}m × {wall.height.toFixed(2)}m
           </span>
         </div>
-        <span className={`text-xs ${neighborConfig.text}`}>
-          → {neighborName}
-        </span>
+        <div className="flex items-center gap-2">
+          {isEditable && onEdit && (
+            <button
+              onClick={onEdit}
+              className="text-xs text-red-500 hover:text-red-700 font-medium"
+              title="Edit wall"
+            >
+              ✎ Edit
+            </button>
+          )}
+          <span className={`text-xs ${neighborConfig.text}`}>
+            → {neighborName}
+          </span>
+        </div>
       </div>
 
       {/* Body */}
@@ -317,6 +335,151 @@ function BOQSummaryCard({ roomId }: BOQSummaryCardProps) {
 }
 
 // =============================================================================
+// EDIT WALL POPUP
+// =============================================================================
+
+interface EditWallPopupProps {
+  wallId: string;
+  onClose: () => void;
+  onUpdate: (updates: { length?: number; height?: number }) => void;
+  updateFaceFinish: (wallId: string, faceSide: 'a' | 'b', finishType: FinishType) => void;
+}
+
+function EditWallPopup({ wallId, onClose, onUpdate, updateFaceFinish }: EditWallPopupProps) {
+  const { walls } = useWallStore();
+  const wall = walls.find((w) => w.id === wallId);
+  
+  const [length, setLength] = useState(wall?.length ?? 0);
+  const [height, setHeight] = useState(wall?.height ?? 0);
+  const [faceAFinish, setFaceAFinish] = useState(wall?.faceA.finishType ?? 'paint');
+  const [faceBFinish, setFaceBFinish] = useState(wall?.faceB.finishType ?? 'paint');
+  
+  // Convert metres to feet for display
+  const lengthInFeet = length * 3.281;
+  const heightInFeet = height * 3.281;
+  
+  const handleSave = () => {
+    onUpdate({ length, height });
+    updateFaceFinish(wallId, 'a', faceAFinish as FinishType);
+    updateFaceFinish(wallId, 'b', faceBFinish as FinishType);
+    onClose();
+  };
+  
+  if (!wall) {
+    return (
+      <div className="border border-red-300 rounded-lg p-4 bg-red-50">
+        <p className="text-red-500 text-sm">Wall not found</p>
+        <button onClick={onClose} className="mt-2 text-sm text-slate-600 hover:underline">
+          Close
+        </button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50 space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-2 border-b border-blue-200">
+        <h3 className="font-bold text-slate-800 text-sm">
+          Edit Wall — {wall.label}
+        </h3>
+        <button
+          onClick={onClose}
+          className="text-slate-600 hover:text-slate-800 text-lg leading-none"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+      
+      {/* Wall Dimensions */}
+      <div>
+        <h4 className="text-xs font-semibold text-slate-700 uppercase mb-2">Dimensions</h4>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-slate-600 mb-1">Length (m)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.1"
+              value={length}
+              onChange={(e) => setLength(parseFloat(e.target.value) || 0)}
+              className="w-full border rounded px-2 py-1.5 text-sm"
+            />
+            <span className="text-xs text-slate-500">{lengthInFeet.toFixed(2)} ft</span>
+          </div>
+          <div>
+            <label className="block text-xs text-slate-600 mb-1">Height (m)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.1"
+              value={height}
+              onChange={(e) => setHeight(parseFloat(e.target.value) || 0)}
+              className="w-full border rounded px-2 py-1.5 text-sm"
+            />
+            <span className="text-xs text-slate-500">{heightInFeet.toFixed(2)} ft</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Finishes */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <h4 className="text-xs font-semibold text-slate-700 mb-1">
+            Your Side ({wall.faceA.compassSide || 'Unknown'})
+          </h4>
+          <select
+            value={faceAFinish}
+            onChange={(e) => setFaceAFinish(e.target.value as FinishType)}
+            className="w-full border rounded px-2 py-1.5 text-sm"
+          >
+            {Object.entries(FINISH_TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <h4 className="text-xs font-semibold text-slate-700 mb-1">Neighbor Side</h4>
+          <select
+            value={faceBFinish}
+            onChange={(e) => setFaceBFinish(e.target.value as FinishType)}
+            className="w-full border rounded px-2 py-1.5 text-sm"
+          >
+            {Object.entries(FINISH_TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      
+      {/* Area Preview */}
+      <div className="bg-white/60 p-2 rounded text-xs text-slate-600">
+        Face A: {(length * height).toFixed(2)} m² &nbsp;|&nbsp;
+        Face B: {(length * height).toFixed(2)} m² &nbsp;|&nbsp;
+        Total: {(length * height * 2).toFixed(2)} m²
+      </div>
+      
+      {/* Actions */}
+      <div className="flex justify-end gap-2 pt-1">
+        <button
+          onClick={onClose}
+          className="px-3 py-1.5 text-xs text-slate-600 hover:bg-white/60 rounded"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Save Changes
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
 // WALL PANEL (MAIN COMPONENT)
 // =============================================================================
 
@@ -326,15 +489,37 @@ export function WallPanel({
   allRooms,
   onWallChange,
   onAddWall,
+  onEditWall,
+  onEditPopupOpen,
 }: WallPanelProps) {
   const { 
     getWallsForRoom, 
     updateFaceFinish,
+    updateWall,
     linkUnlinkedWall,
   } = useWallStore();
 
   const wallsForRoom = getWallsForRoom(roomId);
   const availableRooms = allRooms.filter((r) => r.id !== roomId);
+  const [editWallId, setEditWallId] = useState<string | null>(null);
+  const editFormRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editWallId && editFormRef.current) {
+      editFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [editWallId]);
+
+  const handleOpenEdit = (wallId: string) => {
+    setEditWallId(wallId);
+    onEditPopupOpen?.(true);
+    onEditWall?.(wallId);
+  };
+
+  const handleCloseEdit = () => {
+    setEditWallId(null);
+    onEditPopupOpen?.(false);
+  };
 
   const getNeighborName = (face: WallFace): string => {
     if (face.roomId) {
@@ -366,6 +551,21 @@ export function WallPanel({
           </button>
         )}
       </div>
+
+      {/* Edit popup — shown at top when active */}
+      {editWallId && (
+        <div ref={editFormRef}>
+          <EditWallPopup
+            wallId={editWallId}
+            onClose={handleCloseEdit}
+            onUpdate={(updates) => {
+              updateWall(editWallId, updates);
+              onWallChange?.(editWallId);
+            }}
+            updateFaceFinish={updateFaceFinish}
+          />
+        </div>
+      )}
 
       {/* BOQ Summary */}
       <BOQSummaryCard roomId={roomId} />
@@ -407,6 +607,7 @@ export function WallPanel({
                 linkUnlinkedWall(wall.id, faceSide, linkedRoomId);
                 onWallChange?.(wall.id);
               }}
+              onEdit={() => handleOpenEdit(wall.id)}
               availableRooms={availableRooms}
             />
           ))}
@@ -421,5 +622,3 @@ export function WallPanel({
     </div>
   );
 }
-
-export default WallPanel;

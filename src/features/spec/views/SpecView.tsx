@@ -45,6 +45,7 @@ export function SpecView(): React.ReactElement {
   const [generationMessage, setGenerationMessage] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [showWallPanel, setShowWallPanel] = useState(false);
+  const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
 
   // Wall store
   const wallStore = useWallStore();
@@ -65,7 +66,7 @@ export function SpecView(): React.ReactElement {
     })();
   }, [currentProjectId]);
 
-  // Generate walls when spec changes
+  // Generate walls when spec changes (including when rooms are added/modified)
   useEffect(() => {
     if (!spec) return;
     
@@ -78,6 +79,12 @@ export function SpecView(): React.ReactElement {
       }))
     );
     
+    // No rooms - clear walls
+    if (roomInfos.length === 0) {
+      initWalls([], []);
+      return;
+    }
+    
     // Generate walls for all rooms
     const newWalls: ReturnType<typeof generateWallsForRoom>[] = [];
     for (const room of spec.floors.flatMap((f) => f.rooms)) {
@@ -88,7 +95,7 @@ export function SpecView(): React.ReactElement {
     // Flatten and initialize
     const allWalls = newWalls.flat();
     initWalls(allWalls, roomInfos);
-  }, [spec?.id]); // Only re-generate when spec ID changes (not on every room update)
+  }, [spec?.id, spec?.floors?.length, spec?.floors?.reduce((acc, f) => acc + f.rooms.length, 0)]);
 
   // ── Recalculate on spec change ──────────────────────────────────────────────
 
@@ -309,18 +316,23 @@ export function SpecView(): React.ReactElement {
               ✕ Close
             </button>
           </div>
-          <div className="p-4">
-            <WallPanel
-              roomId={selectedRoom.id}
-              roomName={selectedRoom.name}
-              allRooms={allRooms.map((r) => ({ id: r.id, name: r.name }))}
-            />
-          </div>
+           <div className="p-4">
+             <WallPanel
+               roomId={selectedRoom.id}
+               roomName={selectedRoom.name}
+               allRooms={allRooms.map((r) => ({ id: r.id, name: r.name }))}
+                onEditPopupOpen={setIsEditPopupOpen}
+                onEditWall={(wallId) => {
+                  // Handle wall edit - for now just log it
+                  console.log('Edit wall:', wallId);
+                }}
+             />
+           </div>
         </div>
       )}
 
-      {/* Backdrop */}
-      {showWallPanel && (
+      {/* Backdrop — hidden while editing a wall */}
+      {showWallPanel && !isEditPopupOpen && (
         <div 
           className="fixed inset-0 bg-black/20 z-30"
           onClick={handleCloseWallPanel}
