@@ -19,29 +19,18 @@ import type {
   FoundationSpec,
   GreyStructureMaterials,
   RoomCalculation,
+  WallMaterial,
+  StructuralSystem,
 } from '../types';
+import {
+  WALL_MATERIAL_PROPS,
+  STRUCTURAL_SYSTEM_PROPS,
+  ROOF_STRUCTURE_PROPS,
+} from './materialProps';
 
 // =============================================================================
-// CONSTANTS — Construction Thumb Rules (South Asian Residential)
+// CONSTANTS — Independent of wall/structure type
 // =============================================================================
-
-/** Bricks per sq ft of wall (including mortar): 0.75 × 13.5 */
-export const BRICKS_PER_SQFT = 0.75 * 13.5;
-
-/** Cement bags per 100 bricks (1:4 mortar) */
-export const CEMENT_PER_100_BRICK = 1;
-
-/** Cement bags per 50 sq ft of plaster (1:4 mix) */
-export const CEMENT_PER_SQFT_PLASTER = 1 / 50;
-
-/** Steel kg per sq ft of slab area (average residential: 1.0–1.2 kg/sqft) */
-export const STEEL_KG_PER_SQFT_SLAB = 1.1;
-
-/** Steel kg per linear ft of beam (average) */
-export const STEEL_KG_PER_RFT_BEAM = 1.75;
-
-/** Steel kg per linear ft of column (average) */
-export const STEEL_KG_PER_RFT_COLUMN = 2.75;
 
 /** Mortar as fraction of masonry volume */
 export const MORTAR_FRACTION = 0.25;
@@ -103,21 +92,28 @@ export function ceilingArea(room: RoomSpec): number {
   return roomFloorArea(room);
 }
 
-/** Bricks required for a room's walls */
-export function roomBricks(room: RoomSpec): number {
-  return Math.ceil(netWallArea(room) * BRICKS_PER_SQFT);
+/** Wall units (bricks/blocks) required for a room's walls */
+export function roomWallUnits(room: RoomSpec, material: WallMaterial): number {
+  const props = WALL_MATERIAL_PROPS[material];
+  if (props.unitsPerSqft === 0) return 0; // volume-based materials
+  return Math.ceil(netWallArea(room) * props.unitsPerSqft);
 }
 
-/** Cement bags for a room's brickwork + plaster */
-export function roomCementBags(room: RoomSpec): number {
-  const brickCement = roomBricks(room) / 100;
-  const plasterCement = netWallArea(room) * PLASTER_FACE_MULTIPLIER / 50;
-  return Math.ceil(brickCement + plasterCement);
+/** Cement bags for a room's wall construction + plaster */
+export function roomCementBags(room: RoomSpec, material: WallMaterial): number {
+  const props = WALL_MATERIAL_PROPS[material];
+  const wallUnits = roomWallUnits(room, material);
+  const wallCement = wallUnits / 100 * props.cementBagsPer100;
+  const plasterCement = props.needsCementPlaster
+    ? netWallArea(room) * PLASTER_FACE_MULTIPLIER * props.plasterCementPerSqft
+    : 0;
+  return Math.ceil(wallCement + plasterCement);
 }
 
-/** Steel for floor slab (rough estimate) */
-export function roomSteelKg(room: RoomSpec): number {
-  return roomFloorArea(room) * STEEL_KG_PER_SQFT_SLAB;
+/** Steel for floor slab based on structural system */
+export function roomSteelKg(room: RoomSpec, system: StructuralSystem): number {
+  const sysProps = STRUCTURAL_SYSTEM_PROPS[system];
+  return roomFloorArea(room) * sysProps.steelKgPerSqftSlab;
 }
 
 /** Internal plaster area (both faces of walls) */
@@ -170,16 +166,17 @@ export function floorSlabArea(floor: FloorSpec): number {
   return floorBuiltUpArea(floor);
 }
 
-/** RCC concrete volume for slab (cu ft) */
+/** Slab / roof concrete volume (cu ft) */
 export function floorSlabConcreteCuFt(floor: FloorSpec): number {
-  // Thickness in inches → feet
-  const thicknessFt = floor.slabThickness / 12;
-  return floorSlabArea(floor) * thicknessFt;
+  const roofProps = ROOF_STRUCTURE_PROPS[floor.roofStructure];
+  if (roofProps.concreteCuftPerSqft === 0) return 0;
+  return floorSlabArea(floor) * roofProps.concreteCuftPerSqft;
 }
 
-/** Steel for floor slab (kg) */
+/** Steel for floor slab/roof (kg) based on roof structure */
 export function floorSlabSteelKg(floor: FloorSpec): number {
-  return floorSlabArea(floor) * STEEL_KG_PER_SQFT_SLAB;
+  const roofProps = ROOF_STRUCTURE_PROPS[floor.roofStructure];
+  return floorSlabArea(floor) * roofProps.steelKgPerSqft;
 }
 
 /** Parapet wall area */
@@ -187,10 +184,12 @@ export function parapetWallArea(floor: FloorSpec): number {
   return floor.parapetPerimeter * floor.parapetHeight;
 }
 
-/** Parapet bricks */
-export function parapetBricks(floor: FloorSpec): number {
+/** Parapet wall material units */
+export function parapetWallUnits(floor: FloorSpec): number {
   if (floor.parapetPerimeter === 0 || floor.parapetHeight === 0) return 0;
-  return Math.ceil(parapetWallArea(floor) * BRICKS_PER_SQFT);
+  const props = WALL_MATERIAL_PROPS[floor.wallMaterial];
+  if (props.unitsPerSqft === 0) return 0;
+  return Math.ceil(parapetWallArea(floor) * props.unitsPerSqft);
 }
 
 // =============================================================================
@@ -250,27 +249,42 @@ export function dpcCuFt(
 export function calculateGreyStructure(
   floors: FloorSpec[],
   _foundation: FoundationSpec,
-  _buildingCoverage: number
+  _buildingCoverage: number,
+  structuralSystem: StructuralSystem
 ): GreyStructureMaterials {
   let bricks = 0;
+  let blockUnits = 0;
   let cementBags = 0;
   let sandCuFt = 0;
   let crushCuFt = 0;
   let steelKg = 0;
+  let woodCuft = 0;
 
   for (const floor of floors) {
-    // Aggregate room-level quantities
+    const material = floor.wallMaterial;
+    const props = WALL_MATERIAL_PROPS[material];
+
     for (const room of floor.rooms) {
-      bricks += roomBricks(room);
-      cementBags += roomCementBags(room);
-      steelKg += roomSteelKg(room);
+      const roomUnits = roomWallUnits(room, material);
+      if (material === 'brick' || material === 'stone') {
+        bricks += roomUnits;
+      } else if (props.unitsPerSqft > 0) {
+        blockUnits += roomUnits;
+      }
+      cementBags += roomCementBags(room, material);
+      steelKg += roomSteelKg(room, structuralSystem);
     }
 
-    // Parapet bricks
-    bricks += parapetBricks(floor);
+    // Parapet
+    if (material === 'brick' || material === 'stone') {
+      bricks += parapetWallUnits(floor);
+    } else if (props.unitsPerSqft > 0) {
+      blockUnits += parapetWallUnits(floor);
+    }
 
-    // Slab steel
+    // Roof structure
     steelKg += floorSlabSteelKg(floor);
+    woodCuft += ROOF_STRUCTURE_PROPS[floor.roofStructure].woodCuftPerSqft * floorBuiltUpArea(floor);
 
     // PCC (floor bed) — sand + crush per sq ft
     const pccArea = floorBuiltUpArea(floor);
@@ -285,9 +299,7 @@ export function calculateGreyStructure(
     crushCuFt: Math.round(crushCuFt),
     steelKg: Math.round(steelKg),
     steelTon: Math.round(steelKg) / 1000,
-    // Mortar: bricks × 0.25 of brick volume
-    mortarCuFt: Math.round(bricks * MORTAR_FRACTION / 13.5 * 0.1337),
-    // These need centerline perimeter — set to 0 here, caller provides
+    mortarCuFt: Math.round((bricks + blockUnits) * MORTAR_FRACTION / 13.5 * 0.1337),
     leanConcreteCuFt: 0,
     pccCuFt: 0,
     excavationCuFt: 0,
@@ -304,7 +316,11 @@ export function calculateGreyStructure(
  * default thumb-rule rates. Callers replace these with
  * actual material rates from the rates library.
  */
-export function calculateRoom(room: RoomSpec, greyRatePerSft: number = 500): RoomCalculation {
+export function calculateRoom(
+  room: RoomSpec,
+  wallMaterial: WallMaterial = 'brick',
+  greyRatePerSft: number = 500
+): RoomCalculation {
   const floorArea = roomFloorArea(room);
   const wallArea = grossWallArea(room);
   const openingArea = totalOpeningArea(room.openings);
@@ -312,8 +328,8 @@ export function calculateRoom(room: RoomSpec, greyRatePerSft: number = 500): Roo
   const perimeter = roomPerimeter(room);
   const ceiling = ceilingArea(room);
 
-  const bricks = roomBricks(room);
-  const cementBags = roomCementBags(room);
+  const wallUnits = roomWallUnits(room, wallMaterial);
+  const cementBags = roomCementBags(room, wallMaterial);
   const plasterSft = roomPlasterSft(room);
   const paintable = roomPaintableArea(room);
   const skirting = roomSkirtingRft(room);
@@ -373,7 +389,7 @@ export function calculateRoom(room: RoomSpec, greyRatePerSft: number = 500): Roo
     netWallArea: netWall,
     ceilingArea: ceiling,
     perimeter,
-    bricks,
+    bricks: wallUnits,
     cementBags,
     plasterInternalSft: plasterSft,
     flooringSft,

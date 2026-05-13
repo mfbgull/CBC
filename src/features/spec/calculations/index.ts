@@ -40,12 +40,12 @@ export function calculateProject(spec: ProjectSpec): ProjectCalculation {
   const rooms: RoomCalculation[] = [];
   for (const floor of spec.floors) {
     for (const room of floor.rooms) {
-      rooms.push(calculateRoom(room));
+      rooms.push(calculateRoom(room, floor.wallMaterial));
     }
   }
 
   const buildingCoverage = calcTotalFloorArea(spec.floors);
-  const grey = calculateGreyStructure(spec.floors, spec.foundation, buildingCoverage);
+  const grey = calculateGreyStructure(spec.floors, spec.foundation, buildingCoverage, spec.structuralSystem);
   const finishing = calculateFinishing(spec.floors, spec.flooringDefaults);
   const mep = calculateMEP(spec.floors, spec.mep, buildingCoverage);
 

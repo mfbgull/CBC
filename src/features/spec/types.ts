@@ -50,6 +50,49 @@ export type FloorLevel = 'ground' | 'typical' | 'roof' | 'basement';
 /** Wall thickness in inches */
 export type WallThickness = 4.5 | 9;
 
+/** Wall construction material */
+export type WallMaterial =
+  | 'brick'
+  | 'aac_block'
+  | 'solid_block'
+  | 'stone'
+  | 'mud'
+  | 'rammed_earth';
+
+export const WALL_MATERIAL_OPTIONS: Array<{ value: WallMaterial; label: string }> = [
+  { value: 'brick', label: 'Clay Brick (9")' },
+  { value: 'aac_block', label: 'AAC Block (Sand Block)' },
+  { value: 'solid_block', label: 'Solid Cement Block' },
+  { value: 'stone', label: 'Rubble Stone' },
+  { value: 'mud', label: 'Mud / Adobe' },
+  { value: 'rammed_earth', label: 'Rammed Earth' },
+];
+
+/** Structural framing system */
+export type StructuralSystem = 'rcc_frame' | 'load_bearing' | 'steel_frame';
+
+export const STRUCTURAL_SYSTEM_OPTIONS: Array<{ value: StructuralSystem; label: string }> = [
+  { value: 'rcc_frame', label: 'RCC Frame (Columns + Beams)' },
+  { value: 'load_bearing', label: 'Load Bearing (Walls Carry Load)' },
+  { value: 'steel_frame', label: 'Steel Frame' },
+];
+
+/** Roof/ceiling structural type per floor */
+export type RoofStructure =
+  | 'rcc_slab'
+  | 'rcc_beam_slab'
+  | 'girder_jack_arch'
+  | 'wooden_truss'
+  | 'steel_truss';
+
+export const ROOF_STRUCTURE_OPTIONS: Array<{ value: RoofStructure; label: string }> = [
+  { value: 'rcc_slab', label: 'RCC Flat Slab' },
+  { value: 'rcc_beam_slab', label: 'RCC Beam + Slab' },
+  { value: 'girder_jack_arch', label: 'Steel Girders + Brick Arch (T-Iron)' },
+  { value: 'wooden_truss', label: 'Wooden Truss' },
+  { value: 'steel_truss', label: 'Steel Truss' },
+];
+
 /** Foundation type */
 export type FoundationType = 'strip' | 'raft' | 'isolated';
 
@@ -229,7 +272,8 @@ export interface FloorSpec {
   rooms: RoomSpec[];
   /** Structural */
   slabThickness: number;   // inches — default 5"
-  roofType: 'rcc' | 'flat_rcc' | 'hip';
+  roofStructure: RoofStructure;
+  wallMaterial: WallMaterial;
   wallThickness: WallThickness;
   /** Parapet (roof edge wall) */
   parapetPerimeter: number;  // ft
@@ -248,7 +292,8 @@ export function createFloorSpec(
     level,
     rooms,
     slabThickness: 5,
-    roofType: 'flat_rcc',
+    roofStructure: 'rcc_slab',
+    wallMaterial: 'brick',
     wallThickness: 9,
     parapetPerimeter: 0,
     parapetHeight: 3,
@@ -390,6 +435,7 @@ export interface ProjectSpec {
   name: string;
   location: string;
   floors: FloorSpec[];
+  structuralSystem: StructuralSystem;
   foundation: FoundationSpec;
   mep: MEPSpec;
   site: SiteSpec;
