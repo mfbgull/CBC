@@ -87,6 +87,7 @@ export interface WallActions {
   
   // Face operations
   updateFaceFinish: (wallId: string, faceSide: 'a' | 'b', finishType: FinishType) => void;
+  updateFaceSpaceType: (wallId: string, faceSide: 'a' | 'b', spaceType: SpaceType) => void;
   
   addOpening: (
     wallId: string,
@@ -249,6 +250,14 @@ export const useWallStore = create<WallStore>()((set, get) => ({
     }));
   },
 
+  updateFaceSpaceType: (wallId, faceSide, spaceType) => {
+    set((state) => ({
+      walls: state.walls.map((w) =>
+        w.id === wallId ? updateFaceInWall(w, faceSide, { spaceType, roomId: null }) : w
+      ),
+    }));
+  },
+
   addOpening: (wallId, faceSide, openingType, width, height, quantity = 1) => {
     set((state) => ({
       walls: state.walls.map((w) => {
@@ -306,14 +315,62 @@ export const useWallStore = create<WallStore>()((set, get) => ({
   },
 
   /**
-   * Link an unlinked room face to a room that was created later.
+   * Link a wall's face to a room. Also finds the opposite-side wall in the target
+   * room via compass matching and links it back, so both sides recognize sharing.
    */
   linkUnlinkedWall: (wallId, faceSide, roomId) => {
-    set((state) => ({
-      walls: state.walls.map((w) =>
-        w.id === wallId ? updateFaceInWall(w, faceSide, { spaceType: 'room', roomId }) : w
-      ),
-    }));
+    set((state) => {
+      const wall = state.walls.find((w) => w.id === wallId);
+      if (!wall) return state;
+
+      const ownerFace = faceSide === 'a' ? wall.faceB : wall.faceA;
+      const ownerRoomId = ownerFace.roomId;
+      const compassSide = ownerFace.compassSide;
+
+      let updatedWalls = state.walls.map((w) =>
+        w.id === wallId
+          ? updateFaceInWall(w, faceSide, { spaceType: 'room', roomId })
+          : w
+      );
+
+      if (compassSide && ownerRoomId) {
+        const oppositeMap: Record<string, string> = {
+          north: 'south', south: 'north',
+          east: 'west', west: 'east',
+        };
+        const oppositeSide = oppositeMap[compassSide];
+
+        const counterpartWall = state.walls.find(
+          (w) =>
+            w.id !== wallId &&
+            ((w.faceA.roomId === roomId && w.faceA.compassSide === oppositeSide) ||
+             (w.faceB.roomId === roomId && w.faceB.compassSide === oppositeSide))
+        );
+
+        if (counterpartWall) {
+          const targetOwnFace = counterpartWall.faceA.roomId === roomId
+            ? counterpartWall.faceA
+            : counterpartWall.faceB;
+          const neighborSide = targetOwnFace.faceSide === 'a' ? 'b' : 'a';
+          const neighborFace = neighborSide === 'a'
+            ? counterpartWall.faceA
+            : counterpartWall.faceB;
+
+          if (neighborFace.spaceType !== 'room' || !neighborFace.roomId) {
+            updatedWalls = updatedWalls.map((w) =>
+              w.id === counterpartWall.id
+                ? updateFaceInWall(w, neighborSide, {
+                    spaceType: 'room',
+                    roomId: ownerRoomId,
+                  })
+                : w
+            );
+          }
+        }
+      }
+
+      return { walls: updatedWalls };
+    });
   },
 
   // ── Queries ──────────────────────────────────────────────────────────────────

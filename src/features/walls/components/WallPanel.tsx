@@ -216,16 +216,17 @@ function WallCard({
             )}
           </div>
 
-          {/* Space type editor (for unlinked) */}
-          {neighborStatus === 'unlinked' && onLinkRoom && (
+          {/* Space type editor — always available to set neighbor type */}
+          {neighborStatus !== 'shared' && onUpdateSpaceType && (
             <div className="mt-2">
+              <label className="text-xs text-slate-500 block mb-1">Neighbor Type</label>
               <select
                 value={oppositeFace.spaceType}
-                onChange={() => { void onUpdateSpaceType; void onLinkRoom; void neighborStatus; }}
+                onChange={(e) => onUpdateSpaceType(e.target.value as SpaceType)}
                 className="w-full text-sm border rounded px-2 py-1"
               >
-                <option value="room">Room (to be linked)</option>
                 <option value="external">External Wall</option>
+                <option value="room">Room (to be linked)</option>
                 <option value="open">Open / Void</option>
                 <option value="kitchen">Kitchen</option>
                 <option value="bathroom">Bathroom</option>
@@ -495,6 +496,7 @@ export function WallPanel({
   const { 
     getWallsForRoom, 
     updateFaceFinish,
+    updateFaceSpaceType,
     updateWall,
     linkUnlinkedWall,
   } = useWallStore();
@@ -600,6 +602,11 @@ export function WallPanel({
               onUpdateFinish={(finishType) => {
                 const faceSide = wall.faceA.roomId === roomId ? 'a' : 'b';
                 updateFaceFinish(wall.id, faceSide, finishType);
+                onWallChange?.(wall.id);
+              }}
+              onUpdateSpaceType={(spaceType) => {
+                const faceSide = oppositeFace!.faceSide === 'a' ? 'a' : 'b';
+                updateFaceSpaceType(wall.id, faceSide, spaceType);
                 onWallChange?.(wall.id);
               }}
               onLinkRoom={(linkedRoomId) => {

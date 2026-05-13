@@ -2058,6 +2058,92 @@ textarea.form-control {
   border-radius: 5px;
 }
 
+/* Opening size inputs */
+.spec-openings-sizes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.spec-opening-size-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.spec-opening-size-row .spec-btn-sm {
+  margin-left: auto;
+}
+
+.spec-opening-size-label {
+  font-size: 10px;
+  color: var(--muted);
+  width: 36px;
+  flex-shrink: 0;
+}
+
+.spec-size-input {
+  width: 42px;
+  height: 22px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 11px;
+  text-align: center;
+  font-family: inherit;
+  padding: 0 2px;
+}
+
+.spec-size-input--sm {
+  width: 36px;
+}
+
+.spec-size-sep {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.spec-opening-count-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.spec-dim-input {
+  width: 36px;
+  height: 20px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 11px;
+  text-align: center;
+  font-family: inherit;
+  color: var(--muted);
+  background: transparent;
+  padding: 0 2px;
+}
+
+.spec-dim-input:hover {
+  border-color: var(--line);
+  background: white;
+}
+
+.spec-dim-input:focus {
+  border-color: var(--brand);
+  outline: none;
+  background: white;
+}
+
+.spec-opening-unit {
+  font-size: 10px;
+  color: var(--muted-2);
+}
+
+.spec-opening-count {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
 /* ========================================
    REPORT VIEW STYLES
    ======================================== */

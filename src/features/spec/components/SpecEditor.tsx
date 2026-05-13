@@ -14,7 +14,7 @@
  *   </SpecEditor.Provider>
  */
 
-import { createContext, use, type ReactNode, type ReactElement } from 'react';
+import { createContext, use, useState, type ReactNode, type ReactElement } from 'react';
 import { useSpecStore } from '../store';
 import type { FloorSpec, RoomSpec, RoomKind } from '../types';
 import { ROOM_KIND_OPTIONS } from '../types';
@@ -294,15 +294,29 @@ function AddOpening({ floorId, roomId }: AddOpeningProps): ReactElement {
     .find((f) => f.id === floorId)
     ?.rooms.find((r) => r.id === roomId);
 
+  const [doorW, setDoorW] = useState('3');
+  const [doorH, setDoorH] = useState('7');
+  const [windowW, setWindowW] = useState('4');
+  const [windowH, setWindowH] = useState('3');
+  const [count, setCount] = useState('1');
+
   const addDoor = () => {
     if (!room) return;
-    const opening = { id: crypto.randomUUID(), type: 'door' as const, width: 3, height: 7, count: 1 };
+    const opening = {
+      id: crypto.randomUUID(), type: 'door' as const,
+      width: parseFloat(doorW) || 3, height: parseFloat(doorH) || 7,
+      count: parseInt(count) || 1,
+    };
     updateRoom(floorId, roomId, { openings: [...room.openings, opening] });
   };
 
   const addWindow = () => {
     if (!room) return;
-    const opening = { id: crypto.randomUUID(), type: 'window' as const, width: 4, height: 3, count: 1 };
+    const opening = {
+      id: crypto.randomUUID(), type: 'window' as const,
+      width: parseFloat(windowW) || 4, height: parseFloat(windowH) || 3,
+      count: parseInt(count) || 1,
+    };
     updateRoom(floorId, roomId, { openings: [...room.openings, opening] });
   };
 
@@ -313,17 +327,82 @@ function AddOpening({ floorId, roomId }: AddOpeningProps): ReactElement {
     });
   };
 
+  const updateOpening = (openingId: string, field: 'width' | 'height' | 'count', value: string) => {
+    if (!room) return;
+    const num = field === 'count' ? parseInt(value) || 1 : parseFloat(value) || 0;
+    updateRoom(floorId, roomId, {
+      openings: room.openings.map((o) =>
+        o.id === openingId ? { ...o, [field]: num } : o
+      ),
+    });
+  };
+
   return (
     <div className="spec-openings">
-      <div className="spec-openings-actions">
-        <button onClick={addDoor} className="spec-btn-sm">+ Door</button>
-        <button onClick={addWindow} className="spec-btn-sm">+ Window</button>
+      <div className="spec-openings-sizes">
+        <div className="spec-opening-size-row">
+          <span className="spec-opening-size-label">W×H ft</span>
+          <input
+            type="number" step="0.5" min="0.5"
+            value={doorW}
+            onChange={(e) => setDoorW(e.target.value)}
+            className="spec-size-input" title="Door width"
+          />
+          <span className="spec-size-sep">×</span>
+          <input
+            type="number" step="0.5" min="0.5"
+            value={doorH}
+            onChange={(e) => setDoorH(e.target.value)}
+            className="spec-size-input" title="Door height"
+          />
+          <button onClick={addDoor} className="spec-btn-sm">+ Door</button>
+        </div>
+        <div className="spec-opening-size-row">
+          <span className="spec-opening-size-label">W×H ft</span>
+          <input
+            type="number" step="0.5" min="0.5"
+            value={windowW}
+            onChange={(e) => setWindowW(e.target.value)}
+            className="spec-size-input" title="Window width"
+          />
+          <span className="spec-size-sep">×</span>
+          <input
+            type="number" step="0.5" min="0.5"
+            value={windowH}
+            onChange={(e) => setWindowH(e.target.value)}
+            className="spec-size-input" title="Window height"
+          />
+          <button onClick={addWindow} className="spec-btn-sm">+ Window</button>
+        </div>
+        <div className="spec-opening-count-row">
+          <label className="spec-opening-size-label">Qty</label>
+          <input
+            type="number" step="1" min="1"
+            value={count}
+            onChange={(e) => setCount(e.target.value)}
+            className="spec-size-input spec-size-input--sm" title="Quantity"
+          />
+        </div>
       </div>
       <div className="spec-openings-list">
         {room?.openings.map((o) => (
           <div key={o.id} className="spec-opening-item">
             <span>{o.type === 'door' ? '🚪' : '🪟'}</span>
-            <span>{o.count}× {o.width}×{o.height} ft</span>
+            <input
+              type="number" step="0.5" min="0.5"
+              value={o.width}
+              onChange={(e) => updateOpening(o.id, 'width', e.target.value)}
+              className="spec-dim-input"
+            />
+            <span>×</span>
+            <input
+              type="number" step="0.5" min="0.5"
+              value={o.height}
+              onChange={(e) => updateOpening(o.id, 'height', e.target.value)}
+              className="spec-dim-input"
+            />
+            <span className="spec-opening-unit">ft</span>
+            <span className="spec-opening-count">×{o.count}</span>
             <button onClick={() => removeOpening(o.id)} className="spec-btn-icon text-xs">✕</button>
           </div>
         ))}
