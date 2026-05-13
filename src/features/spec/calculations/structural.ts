@@ -94,14 +94,15 @@ export function ceilingArea(room: RoomSpec): number {
 
 /** Wall units (bricks/blocks) required for a room's walls */
 export function roomWallUnits(room: RoomSpec, material: WallMaterial): number {
-  const props = WALL_MATERIAL_PROPS[material];
-  if (props.unitsPerSqft === 0) return 0; // volume-based materials
+  const props = WALL_MATERIAL_PROPS[material ?? 'brick'];
+  if (!props || props.unitsPerSqft === 0) return 0;
   return Math.ceil(netWallArea(room) * props.unitsPerSqft);
 }
 
 /** Cement bags for a room's wall construction + plaster */
 export function roomCementBags(room: RoomSpec, material: WallMaterial): number {
-  const props = WALL_MATERIAL_PROPS[material];
+  const props = WALL_MATERIAL_PROPS[material ?? 'brick'];
+  if (!props) return roomCementBags(room, 'brick');
   const wallUnits = roomWallUnits(room, material);
   const wallCement = wallUnits / 100 * props.cementBagsPer100;
   const plasterCement = props.needsCementPlaster
@@ -112,7 +113,8 @@ export function roomCementBags(room: RoomSpec, material: WallMaterial): number {
 
 /** Steel for floor slab based on structural system */
 export function roomSteelKg(room: RoomSpec, system: StructuralSystem): number {
-  const sysProps = STRUCTURAL_SYSTEM_PROPS[system];
+  const sysProps = STRUCTURAL_SYSTEM_PROPS[system ?? 'rcc_frame'];
+  if (!sysProps) return roomSteelKg(room, 'rcc_frame');
   return roomFloorArea(room) * sysProps.steelKgPerSqftSlab;
 }
 
@@ -168,14 +170,15 @@ export function floorSlabArea(floor: FloorSpec): number {
 
 /** Slab / roof concrete volume (cu ft) */
 export function floorSlabConcreteCuFt(floor: FloorSpec): number {
-  const roofProps = ROOF_STRUCTURE_PROPS[floor.roofStructure];
-  if (roofProps.concreteCuftPerSqft === 0) return 0;
+  const roofProps = ROOF_STRUCTURE_PROPS[floor.roofStructure ?? 'rcc_slab'];
+  if (!roofProps || roofProps.concreteCuftPerSqft === 0) return 0;
   return floorSlabArea(floor) * roofProps.concreteCuftPerSqft;
 }
 
 /** Steel for floor slab/roof (kg) based on roof structure */
 export function floorSlabSteelKg(floor: FloorSpec): number {
-  const roofProps = ROOF_STRUCTURE_PROPS[floor.roofStructure];
+  const roofProps = ROOF_STRUCTURE_PROPS[floor.roofStructure ?? 'rcc_slab'];
+  if (!roofProps) return floorSlabArea(floor) * 1.1;
   return floorSlabArea(floor) * roofProps.steelKgPerSqft;
 }
 
@@ -187,8 +190,8 @@ export function parapetWallArea(floor: FloorSpec): number {
 /** Parapet wall material units */
 export function parapetWallUnits(floor: FloorSpec): number {
   if (floor.parapetPerimeter === 0 || floor.parapetHeight === 0) return 0;
-  const props = WALL_MATERIAL_PROPS[floor.wallMaterial];
-  if (props.unitsPerSqft === 0) return 0;
+  const props = WALL_MATERIAL_PROPS[floor.wallMaterial ?? 'brick'];
+  if (!props || props.unitsPerSqft === 0) return 0;
   return Math.ceil(parapetWallArea(floor) * props.unitsPerSqft);
 }
 
@@ -261,8 +264,8 @@ export function calculateGreyStructure(
   let woodCuft = 0;
 
   for (const floor of floors) {
-    const material = floor.wallMaterial;
-    const props = WALL_MATERIAL_PROPS[material];
+    const material = floor.wallMaterial ?? 'brick';
+    const props = WALL_MATERIAL_PROPS[material] ?? WALL_MATERIAL_PROPS.brick;
 
     for (const room of floor.rooms) {
       const roomUnits = roomWallUnits(room, material);
@@ -284,7 +287,8 @@ export function calculateGreyStructure(
 
     // Roof structure
     steelKg += floorSlabSteelKg(floor);
-    woodCuft += ROOF_STRUCTURE_PROPS[floor.roofStructure].woodCuftPerSqft * floorBuiltUpArea(floor);
+    const roofType = floor.roofStructure ?? 'rcc_slab';
+    woodCuft += (ROOF_STRUCTURE_PROPS[roofType]?.woodCuftPerSqft ?? 0) * floorBuiltUpArea(floor);
 
     // PCC (floor bed) — sand + crush per sq ft
     const pccArea = floorBuiltUpArea(floor);

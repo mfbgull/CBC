@@ -189,11 +189,21 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
       set({ spec: null, calculation: null, isDirty: false });
       return;
     }
+    // Backward compat: old saved specs lack structure fields
+    const migrated: ProjectSpec = {
+      ...spec,
+      structuralSystem: spec.structuralSystem ?? 'rcc_frame',
+      floors: spec.floors.map((f) => ({
+        ...f,
+        wallMaterial: f.wallMaterial ?? ('brick' as const),
+        roofStructure: f.roofStructure ?? ('rcc_slab' as const),
+      })),
+    };
     try {
-      set({ spec, calculation: calculateProject(spec), isDirty: false });
+      set({ spec: migrated, calculation: calculateProject(migrated), isDirty: false });
     } catch (error) {
       console.error('Calculation failed on setSpec:', error);
-      set({ spec, calculation: null, isDirty: false });
+      set({ spec: migrated, calculation: null, isDirty: false });
     }
   },
 
