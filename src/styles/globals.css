@@ -2052,6 +2052,129 @@ textarea.form-control {
   background: var(--brand-soft);
 }
 
+/* Openings */
+.spec-openings {
+  border-top: 1px solid var(--line-2);
+  padding-top: 8px;
+  margin-top: 6px;
+}
+
+.spec-btn-sm {
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.spec-btn-sm:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.spec-openings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spec-opening-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 2px 4px;
+  background: white;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+}
+
+/* Opening size inputs */
+.spec-openings-sizes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.spec-opening-size-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.spec-opening-type-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.spec-size-input {
+  width: 38px;
+  height: 22px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 11px;
+  text-align: center;
+  font-family: inherit;
+  padding: 0 2px;
+}
+
+.spec-size-sep {
+  font-size: 11px;
+  color: var(--muted-2);
+}
+
+.spec-size-unit {
+  font-size: 9px;
+  color: var(--muted-2);
+  margin-right: auto;
+}
+
+.spec-btn-sm--add {
+  padding: 0 6px;
+  font-size: 9px;
+}
+
+.spec-opening-count-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.spec-dim-input {
+  width: 34px;
+  height: 20px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 11px;
+  text-align: center;
+  font-family: inherit;
+  color: var(--muted);
+  background: transparent;
+  padding: 0 2px;
+}
+
+.spec-dim-input:hover {
+  border-color: var(--line);
+  background: white;
+}
+
+.spec-dim-input:focus {
+  border-color: var(--brand);
+  outline: none;
+  background: white;
+}
+
 /* ========================================
    UTILITY — Flex
    ======================================== */

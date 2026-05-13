@@ -365,7 +365,7 @@ function AddOpening({ floorId, roomId }: AddOpeningProps): ReactElement {
     <div className="spec-openings">
       <div className="spec-openings-sizes">
         <div className="spec-opening-size-row">
-          <span className="spec-opening-size-label">W×H ft</span>
+          <span className="spec-opening-type-label">Door</span>
           <input
             type="number" step="0.5" min="0.5"
             value={doorW}
@@ -379,10 +379,11 @@ function AddOpening({ floorId, roomId }: AddOpeningProps): ReactElement {
             onChange={(e) => setDoorH(e.target.value)}
             className="spec-size-input" title="Door height"
           />
-          <button onClick={addDoor} className="spec-btn-sm">+ Door</button>
+          <span className="spec-size-unit">ft</span>
+          <button onClick={addDoor} className="spec-btn-sm spec-btn-sm--add">+Door</button>
         </div>
         <div className="spec-opening-size-row">
-          <span className="spec-opening-size-label">W×H ft</span>
+          <span className="spec-opening-type-label">Window</span>
           <input
             type="number" step="0.5" min="0.5"
             value={windowW}
@@ -396,15 +397,16 @@ function AddOpening({ floorId, roomId }: AddOpeningProps): ReactElement {
             onChange={(e) => setWindowH(e.target.value)}
             className="spec-size-input" title="Window height"
           />
-          <button onClick={addWindow} className="spec-btn-sm">+ Window</button>
+          <span className="spec-size-unit">ft</span>
+          <button onClick={addWindow} className="spec-btn-sm spec-btn-sm--add">+Window</button>
         </div>
         <div className="spec-opening-count-row">
-          <label className="spec-opening-size-label">Qty</label>
+          <label className="spec-opening-type-label">Qty</label>
           <input
             type="number" step="1" min="1"
             value={count}
             onChange={(e) => setCount(e.target.value)}
-            className="spec-size-input spec-size-input--sm" title="Quantity"
+            className="spec-size-input" title="Quantity"
           />
         </div>
       </div>
