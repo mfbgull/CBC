@@ -16,8 +16,8 @@
 
 import { createContext, use, useState, type ReactNode, type ReactElement } from 'react';
 import { useSpecStore } from '../store';
-import type { FloorSpec, RoomSpec, RoomKind } from '../types';
-import { ROOM_KIND_OPTIONS } from '../types';
+import type { FloorSpec, RoomSpec, RoomKind, StructuralSystem, WallMaterial, RoofStructure } from '../types';
+import { ROOM_KIND_OPTIONS, WALL_MATERIAL_OPTIONS, ROOF_STRUCTURE_OPTIONS } from '../types';
 
 // =============================================================================
 // CONTEXT
@@ -35,6 +35,7 @@ interface SpecEditorContextValue {
   removeRoom: (floorId: string, roomId: string) => void;
   updateRoom: (floorId: string, roomId: string, updates: Partial<RoomSpec>) => void;
   recalculate: () => void;
+  setStructuralSystem: (system: StructuralSystem) => void;
 }
 
 const SpecEditorContext = createContext<SpecEditorContextValue | null>(null);
@@ -60,6 +61,7 @@ export function SpecEditorProvider({ children }: SpecEditorProviderProps): React
     removeRoom: store.removeRoom,
     updateRoom: store.updateRoom,
     recalculate: store.recalculate,
+    setStructuralSystem: store.setStructuralSystem,
   };
 
   return (
@@ -93,13 +95,35 @@ interface FloorProps {
 }
 
 function Floor({ floor, children }: FloorProps): ReactElement {
-  const { removeFloor } = useSpecEditorContext();
+  const { removeFloor, updateFloor } = useSpecEditorContext();
 
   return (
     <div className="spec-floor" data-floor-id={floor.id}>
       <div className="spec-floor-header">
         <span className="spec-floor-name">{floor.name}</span>
         <span className="spec-floor-level">{floor.level}</span>
+        <div className="ml-auto flex items-center gap-2">
+          <select
+            value={floor.wallMaterial}
+            onChange={(e) => updateFloor(floor.id, { wallMaterial: e.target.value as WallMaterial })}
+            className="spec-structure-select"
+            title="Wall material"
+          >
+            {WALL_MATERIAL_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <select
+            value={floor.roofStructure}
+            onChange={(e) => updateFloor(floor.id, { roofStructure: e.target.value as RoofStructure })}
+            className="spec-structure-select"
+            title="Roof structure"
+          >
+            {ROOF_STRUCTURE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
         <button
           onClick={() => removeFloor(floor.id)}
           className="spec-btn-icon text-red-400 hover:text-red-600"

@@ -276,6 +276,25 @@ export function SpecView(): React.ReactElement {
             </div>
           )}
 
+          {/* Structural system */}
+          {spec.floors.length > 0 && (
+            <div className="flex items-center gap-3 mb-3 p-2 bg-gray-50 rounded border border-gray-200">
+              <span className="text-xs font-medium text-gray-600">Structure:</span>
+              <select
+                value={spec.structuralSystem}
+                onChange={(e) => {
+                  const sys = e.target.value as 'rcc_frame' | 'load_bearing' | 'steel_frame';
+                  setSpec({ ...spec, structuralSystem: sys });
+                }}
+                className="text-xs border rounded px-2 py-1 bg-white"
+              >
+                <option value="rcc_frame">RCC Frame</option>
+                <option value="load_bearing">Load Bearing</option>
+                <option value="steel_frame">Steel Frame</option>
+              </select>
+            </div>
+          )}
+
           {/* Floors */}
           {spec.floors.map((floor: FloorSpec) => (
             <SpecEditor.Floor key={floor.id} floor={floor}>

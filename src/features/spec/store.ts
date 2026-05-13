@@ -15,6 +15,7 @@ import type {
   RoomKind,
   FlooringMaterial,
   PaintType,
+  StructuralSystem,
 } from './types';
 import { calculateProject, generateBOQItems } from './calculations';
 import type { BoqItemCreateInput } from '../../types/domain';
@@ -65,6 +66,7 @@ export interface SpecState {
 
   // Calculation
   recalculate: () => void;
+  setStructuralSystem: (system: StructuralSystem) => void;
   generateBoqItems: () => BoqItemCreateInput[];
   clearSpec: () => void;
   setError: (error: string | null) => void;
@@ -428,6 +430,18 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     } catch (error) {
       console.error('Calculation failed:', error);
       set({ error: 'Calculation failed', calculation: null });
+    }
+  },
+
+  setStructuralSystem: (system) => {
+    const { spec } = get();
+    if (!spec) return;
+    const newSpec = { ...spec, structuralSystem: system };
+    set({ spec: newSpec, isDirty: true });
+    try {
+      set({ calculation: calculateProject(newSpec) });
+    } catch (error) {
+      console.error('Calculation failed:', error);
     }
   },
 
