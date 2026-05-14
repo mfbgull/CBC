@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import type { MaterialRate, MaterialRateCreateInput, RateCategory } from '../../types/domain';
 import * as db from '../../lib/db';
+import { logger } from '../../lib/logger';
 
 // Constants
 export const RATE_CATEGORY_OPTIONS = [
@@ -62,7 +63,7 @@ export const useRatesStore = create<RatesState>()((set, get) => ({
       const rates = await db.getAllRates();
       set({ rates, isLoading: false, isInitialized: true });
     } catch (error) {
-      console.error('Failed to load rates:', error);
+      logger.error('Failed to load rates:', error);
       set({ error: 'Failed to load rates', isLoading: false });
     }
   },
@@ -79,7 +80,7 @@ export const useRatesStore = create<RatesState>()((set, get) => ({
       }));
       return newRate;
     } catch (error) {
-      console.error('Failed to create rate:', error);
+      logger.error('Failed to create rate:', error);
       set({ error: 'Failed to create rate', isLoading: false });
       throw error;
     }
@@ -103,7 +104,7 @@ export const useRatesStore = create<RatesState>()((set, get) => ({
         city: updates.city,
       });
     } catch (error) {
-      console.error('Failed to update rate:', error);
+      logger.error('Failed to update rate:', error);
       // Reload on error
       const rates = await db.getAllRates();
       set({ rates });
@@ -119,7 +120,7 @@ export const useRatesStore = create<RatesState>()((set, get) => ({
     try {
       await db.deleteRate(id);
     } catch (error) {
-      console.error('Failed to delete rate:', error);
+      logger.error('Failed to delete rate:', error);
       // Reload on error
       const rates = await db.getAllRates();
       set({ rates });
@@ -150,7 +151,7 @@ export const useRatesStore = create<RatesState>()((set, get) => ({
           const results = await db.searchRates(query);
           resolve(results);
         } catch (error) {
-          console.error('Search failed:', error);
+          logger.error('Search failed:', error);
           resolve([]);
         }
       }, 200);

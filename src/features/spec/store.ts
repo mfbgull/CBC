@@ -1,8 +1,3 @@
-/**
- * Specification feature store
- * Manages ProjectSpec state — room-based BOQ input
- */
-
 import { create } from 'zustand';
 import type {
   ProjectSpec,
@@ -19,6 +14,80 @@ import type {
 } from './types';
 import { calculateProject, generateBOQItems } from './calculations';
 import type { BoqItemCreateInput } from '../../types/domain';
+import { logger } from '../../lib/logger';
+
+// =============================================================================
+// CALCULATION CACHE
+// =============================================================================
+
+interface CalcCacheEntry {
+  hash: string;
+  result: ProjectCalculation;
+}
+
+const calcCache = new Map<string, CalcCacheEntry>();
+const MAX_CACHE_SIZE = 10;
+
+function specHash(spec: ProjectSpec): string {
+  return JSON.stringify(spec);
+}
+
+function getCachedCalculation(spec: ProjectSpec): ProjectCalculation | null {
+  const hash = specHash(spec);
+  const entry = calcCache.get(hash);
+  if (entry) return entry.result;
+  return null;
+}
+
+function setCachedCalculation(spec: ProjectSpec, result: ProjectCalculation): void {
+  const hash = specHash(spec);
+  // Evict oldest entry if at capacity
+  if (calcCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = calcCache.keys().next().value;
+    if (firstKey) calcCache.delete(firstKey);
+  }
+  calcCache.set(hash, { hash, result });
+}
+
+/**
+ * Run calculation with cache lookup. Falls back to synchronous calc on cache miss.
+ */
+function runCalculation(spec: ProjectSpec): ProjectCalculation {
+  const cached = getCachedCalculation(spec);
+  if (cached) return cached;
+
+  if (import.meta.env.DEV) {
+    console.time('calculateProject');
+  }
+  const result = calculateProject(spec);
+  if (import.meta.env.DEV) {
+    console.timeEnd('calculateProject');
+  }
+
+  setCachedCalculation(spec, result);
+  return result;
+}
+
+/**
+ * Schedule a delayed recalculation. Cancels previous pending recalculation.
+ * Used for rapid-fire mutations like `updateRoom`.
+ */
+let _pendingCalcTimer: ReturnType<typeof setTimeout> | null = null;
+const RECALC_DEBOUNCE_MS = 300;
+
+function scheduleRecalculation(spec: ProjectSpec, setFn: (s: Partial<SpecState>) => void): void {
+  if (_pendingCalcTimer) clearTimeout(_pendingCalcTimer);
+  setFn({ isRecalculating: true });
+  _pendingCalcTimer = setTimeout(() => {
+    try {
+      setFn({ calculation: runCalculation(spec), isRecalculating: false });
+    } catch (error) {
+      logger.error('Debounced calculation failed:', error);
+      setFn({ isRecalculating: false });
+    }
+    _pendingCalcTimer = null;
+  }, RECALC_DEBOUNCE_MS);
+}
 
 // =============================================================================
 // STATE
@@ -33,6 +102,8 @@ export interface SpecState {
   isDirty: boolean;
   /** Loading flag */
   isLoading: boolean;
+  /** Recalculation in progress (for debounced updates) */
+  isRecalculating: boolean;
   /** Error */
   error: string | null;
 
@@ -139,6 +210,7 @@ function defaultSpec(name: string, location: string): ProjectSpec {
       includeNocCharges: false,
       includeTermiteProofing: true,
       includeSecurity: true,
+      waterTankCapacity: 500,
       hasRiverBoulders: false,
       hasBrandedSteel: false,
       city: 'Peshawar',
@@ -171,6 +243,7 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
   calculation: null,
   isDirty: false,
   isLoading: false,
+  isRecalculating: false,
   error: null,
 
   // ── Initialization ────────────────────────────────────────────────────────
@@ -178,9 +251,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
   initSpec: (name, location) => {
     const spec = defaultSpec(name, location);
     try {
-      set({ spec, calculation: calculateProject(spec), isDirty: false, error: null });
+      set({ spec, calculation: runCalculation(spec), isDirty: false, error: null });
     } catch (error) {
-      console.error('Calculation failed on initSpec:', error);
+      logger.error('Calculation failed on initSpec:', error);
       set({ spec, calculation: null, isDirty: false, error: null });
     }
   },
@@ -190,7 +263,7 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
       set({ spec: null, calculation: null, isDirty: false });
       return;
     }
-    // Backward compat: old saved specs lack structure fields
+    // Backward compat: old saved specs lack structure/site fields
     const migrated: ProjectSpec = {
       ...spec,
       structuralSystem: spec.structuralSystem ?? 'rcc_frame',
@@ -199,11 +272,15 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
         wallMaterial: f.wallMaterial ?? ('brick' as const),
         roofStructure: f.roofStructure ?? ('rcc_slab' as const),
       })),
+      site: {
+        ...spec.site,
+        waterTankCapacity: spec.site?.waterTankCapacity ?? 500,
+      },
     };
     try {
-      set({ spec: migrated, calculation: calculateProject(migrated), isDirty: false });
+      set({ spec: migrated, calculation: runCalculation(migrated), isDirty: false });
     } catch (error) {
-      console.error('Calculation failed on setSpec:', error);
+      logger.error('Calculation failed on setSpec:', error);
       set({ spec: migrated, calculation: null, isDirty: false });
     }
   },
@@ -231,9 +308,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     const newSpec = { ...spec, floors: [...spec.floors, newFloor] };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on addFloor:', error);
+      logger.error('Calculation failed on addFloor:', error);
     }
   },
 
@@ -246,9 +323,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on removeFloor:', error);
+      logger.error('Calculation failed on removeFloor:', error);
     }
   },
 
@@ -279,9 +356,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on addRoom:', error);
+      logger.error('Calculation failed on addRoom:', error);
     }
   },
 
@@ -298,9 +375,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on removeRoom:', error);
+      logger.error('Calculation failed on removeRoom:', error);
     }
   },
 
@@ -321,12 +398,7 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
       ),
     };
     set({ spec: newSpec, isDirty: true, calculation: null });
-    try {
-      const calculation = calculateProject(newSpec);
-      set({ calculation });
-    } catch (error) {
-      console.error('Calculation failed on updateRoom:', error);
-    }
+    scheduleRecalculation(newSpec, set);
   },
 
   // ── Foundation ─────────────────────────────────────────────────────────────
@@ -340,9 +412,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on updateFoundation:', error);
+      logger.error('Calculation failed on updateFoundation:', error);
     }
   },
 
@@ -366,9 +438,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on updateMEP:', error);
+      logger.error('Calculation failed on updateMEP:', error);
     }
   },
 
@@ -383,9 +455,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on updateSite:', error);
+      logger.error('Calculation failed on updateSite:', error);
     }
   },
 
@@ -400,9 +472,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on setFlooringDefault:', error);
+      logger.error('Calculation failed on setFlooringDefault:', error);
     }
   },
 
@@ -412,9 +484,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     const newSpec = { ...spec, paintType };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on setPaintType:', error);
+      logger.error('Calculation failed on setPaintType:', error);
     }
   },
 
@@ -424,9 +496,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     const newSpec = { ...spec, wastageFactor: factor };
     set({ spec: newSpec, isDirty: true, calculation: null });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed on setWastageFactor:', error);
+      logger.error('Calculation failed on setWastageFactor:', error);
     }
   },
 
@@ -436,10 +508,10 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     const { spec } = get();
     if (!spec) return;
     try {
-      const calculation = calculateProject(spec);
+      const calculation = runCalculation(spec);
       set({ calculation, isDirty: false });
     } catch (error) {
-      console.error('Calculation failed:', error);
+      logger.error('Calculation failed:', error);
       set({ error: 'Calculation failed', calculation: null });
     }
   },
@@ -450,9 +522,9 @@ export const useSpecStore = create<SpecState>()((set, get) => ({
     const newSpec = { ...spec, structuralSystem: system };
     set({ spec: newSpec, isDirty: true });
     try {
-      set({ calculation: calculateProject(newSpec) });
+      set({ calculation: runCalculation(newSpec) });
     } catch (error) {
-      console.error('Calculation failed:', error);
+      logger.error('Calculation failed:', error);
     }
   },
 

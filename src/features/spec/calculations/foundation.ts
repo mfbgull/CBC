@@ -137,7 +137,7 @@ export function hiddenCosts(
   if (site.includeSecurity)         total += securityCost(constructionMonths);
 
   total += soilTestingCost(site);
-  total += waterTankCost((site as SiteSpec & { waterTankCapacity?: number }).waterTankCapacity ?? 500);
+  total += waterTankCost(site.waterTankCapacity);
 
   return total;
 }

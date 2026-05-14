@@ -18,6 +18,7 @@ import type {
   TemplateItem,
   Settings,
 } from '../types/domain';
+import { logger } from './logger';
 import type { ProjectSpec } from '../features/spec/types';
 import type { MilestonePaymentPlan } from '../features/payment/store';
 
@@ -57,7 +58,7 @@ function saveToStorage<T>(key: string, data: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (error) {
-    console.error('Failed to save to localStorage:', error);
+    logger.error('Failed to save to localStorage:', error);
   }
 }
 
@@ -94,7 +95,7 @@ const DEFAULT_SETTINGS: Settings = {
  * Initialize database (localStorage mode)
  */
 export async function initDatabase(): Promise<void> {
-  console.log('Initializing database (localStorage mode)...');
+  logger.debug('Initializing database (localStorage mode)...');
   
   // Load cached data
   cachedProjects = loadFromStorage<Project[]>(STORAGE_KEYS.projects, []);
@@ -113,7 +114,7 @@ export async function initDatabase(): Promise<void> {
     saveToStorage(STORAGE_KEYS.settings, cachedSettings);
   }
   
-  console.log('Database initialized with localStorage');
+  logger.debug('Database initialized with localStorage');
 }
 
 /**

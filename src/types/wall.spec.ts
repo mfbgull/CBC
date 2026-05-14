@@ -133,20 +133,9 @@
 // =============================================================================
 
 /**
- * A. Partial sharing: NOT required in this version
- *    Assume full wall length is shared.
- *    TODO: Add partial segment support later.
- * 
- * B. Height mismatch: wall.height = min(room_a.height, room_b.height)
- *    Flag the mismatch in UI.
- * 
- * C. Door in shared wall: openings belong to specific face only.
- *    Door frame/architrave assigned to face with the opening.
- * 
- * D. Deleting a room: set face to external, don't delete wall.
- * 
- * E. Duplicate wall prevention: check for existing wall on compass side
- *    before creating new wall. Offer merge/link instead.
+ * A. Partial sharing: OUT OF SCOPE for v1.0
+ *    Full wall length is always shared between two spaces.
+ *    Partial segment support tracked in: https://github.com/.../issues/partial-sharing
  */
 
 /**

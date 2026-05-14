@@ -12,13 +12,14 @@ import { useProjectsStore } from '../../projects/store';
 import { useSettingsStore } from '../../settings/store';
 import { formatCurrency, calculateTotals } from '../../../lib/calculations';
 import type { BoqItem, CalculationResult } from '../../../types/domain';
+import { logger } from '../../../lib/logger';
 
 export function BoqView() {
   const gridRef = useRef<AgGridReact>(null);
   const gridApiRef = useRef<GridApi | null>(null);
 
   const items = useBoqStore((state) => state.items);
-  console.log('[View] BoqView items:', items.length, 'ids:', items.map(i => i.id));
+  logger.debug('[View] BoqView items:', items.length, 'ids:', items.map(i => i.id));
   const addItem = useBoqStore((state) => state.addItem);
   const updateItem = useBoqStore((state) => state.updateItem);
   const deleteItems = useBoqStore((state) => state.deleteItems);

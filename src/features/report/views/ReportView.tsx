@@ -11,7 +11,7 @@
  * Integrates with both manual BOQ and spec-generated BOQ.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useBoqStore } from '../../boq/store';
 import { useProjectsStore } from '../../projects/store';
 import { useSpecStore } from '../../spec/store';
@@ -194,6 +194,19 @@ export function ReportView(): React.ReactElement {
     return totals;
   }, [grouped]);
 
+  // Expand/collapse state for report sections
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    for (const key of Object.keys(SECTION_CONFIG)) {
+      initial[key] = true; // all expanded by default
+    }
+    return initial;
+  });
+
+  const toggleSection = (key: string) => {
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   // No project
   if (!currentProjectId) {
     return (
@@ -300,6 +313,8 @@ export function ReportView(): React.ReactElement {
               icon={config.icon}
               label={config.label}
               items={sectionItems}
+              expanded={expandedSections[key]}
+              onToggle={() => toggleSection(key)}
             />
           );
         })}

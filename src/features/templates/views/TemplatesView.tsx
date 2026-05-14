@@ -8,6 +8,7 @@ import { useTemplatesStore, selectAllTemplates } from '../store';
 import { useBoqStore, selectBoqItems } from '../../boq/store';
 import { useProjectsStore } from '../../projects/store';
 import type { Template, TemplateItem } from '../../../types/domain';
+import { logger } from '../../../lib/logger';
 
 export function TemplatesView() {
   const templates = useTemplatesStore(selectAllTemplates);
@@ -63,7 +64,7 @@ export function TemplatesView() {
       setNewTemplateDescription('');
       setNewTemplateCategory('residential');
     } catch (error) {
-      console.error('Failed to save template:', error);
+      logger.error('Failed to save template:', error);
       alert('Failed to save template');
     }
   };
@@ -87,7 +88,7 @@ export function TemplatesView() {
       await addBoqItems(boqInputs);
       alert(`Applied template "${template.name}" - ${template.items.length} items added`);
     } catch (error) {
-      console.error('Failed to apply template:', error);
+      logger.error('Failed to apply template:', error);
       alert('Failed to apply template');
     }
   };

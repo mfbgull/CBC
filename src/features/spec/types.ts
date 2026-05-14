@@ -353,6 +353,8 @@ export interface SiteSpec {
   /** Safety */
   includeTermiteProofing: boolean;
   includeSecurity: boolean;
+  /** Water tank capacity in gallons */
+  waterTankCapacity: number;
   /** Logistics */
   hasRiverBoulders: boolean;
   hasBrandedSteel: boolean;
@@ -371,6 +373,7 @@ export const DEFAULT_SITE: SiteSpec = {
   includeNocCharges: false,
   includeTermiteProofing: true,
   includeSecurity: true,
+  waterTankCapacity: 500,
   hasRiverBoulders: false,
   hasBrandedSteel: false,
   city: 'Peshawar',

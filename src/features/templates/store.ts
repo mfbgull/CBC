@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import type { Template, TemplateItem } from '../../types/domain';
 import * as db from '../../lib/db';
+import { logger } from '../../lib/logger';
 
 interface TemplatesState {
   // Data
@@ -39,7 +40,7 @@ export const useTemplatesStore = create<TemplatesState>()((set, get) => ({
       const templates = await db.getAllTemplates();
       set({ templates, isLoading: false, isInitialized: true });
     } catch (error) {
-      console.error('Failed to load templates:', error);
+      logger.error('Failed to load templates:', error);
       set({ error: 'Failed to load templates', isLoading: false });
     }
   },
@@ -54,7 +55,7 @@ export const useTemplatesStore = create<TemplatesState>()((set, get) => ({
       }));
       return newTemplate;
     } catch (error) {
-      console.error('Failed to create template:', error);
+      logger.error('Failed to create template:', error);
       set({ error: 'Failed to create template', isLoading: false });
       throw error;
     }
@@ -71,7 +72,7 @@ export const useTemplatesStore = create<TemplatesState>()((set, get) => ({
     try {
       await db.updateTemplate(id, name, description, category, items);
     } catch (error) {
-      console.error('Failed to update template:', error);
+      logger.error('Failed to update template:', error);
       // Reload on error
       const templates = await db.getAllTemplates();
       set({ templates });
@@ -87,7 +88,7 @@ export const useTemplatesStore = create<TemplatesState>()((set, get) => ({
     try {
       await db.deleteTemplate(id);
     } catch (error) {
-      console.error('Failed to delete template:', error);
+      logger.error('Failed to delete template:', error);
       // Reload on error
       const templates = await db.getAllTemplates();
       set({ templates });
@@ -98,7 +99,7 @@ export const useTemplatesStore = create<TemplatesState>()((set, get) => ({
     try {
       return await db.getTemplate(id);
     } catch (error) {
-      console.error('Failed to get template:', error);
+      logger.error('Failed to get template:', error);
       return null;
     }
   },

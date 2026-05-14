@@ -10,6 +10,7 @@ import { useProjectsStore } from '../../projects/store';
 import { useSettingsStore } from '../../settings/store';
 import { useExportStore } from '../store';
 import { formatCurrency, calculateTotals } from '../../../lib/calculations';
+import { logger } from '../../../lib/logger';
 
 export function ExportView() {
   // Store state
@@ -326,7 +327,7 @@ export function ExportView() {
 
       alert('PDF exported successfully!');
     } catch (error) {
-      console.error('PDF export error:', error);
+      logger.error('PDF export error:', error);
       alert('Failed to export PDF. Please try again.');
     } finally {
       setExporting(false);
@@ -411,7 +412,7 @@ export function ExportView() {
 
       alert('Excel exported successfully!');
     } catch (error) {
-      console.error('Excel export error:', error);
+      logger.error('Excel export error:', error);
       alert('Failed to export Excel. Please try again.');
     } finally {
       setExporting(false);

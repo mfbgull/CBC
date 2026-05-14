@@ -45,7 +45,7 @@ export function calculateProject(spec: ProjectSpec): ProjectCalculation {
   }
 
   const buildingCoverage = calcTotalFloorArea(spec.floors);
-  const grey = calculateGreyStructure(spec.floors, spec.foundation, buildingCoverage, spec.structuralSystem);
+  const grey = calculateGreyStructure(spec.floors, spec.structuralSystem);
   const finishing = calculateFinishing(spec.floors, spec.flooringDefaults);
   const mep = calculateMEP(spec.floors, spec.mep, buildingCoverage);
 

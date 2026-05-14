@@ -69,6 +69,31 @@ export function totalOpeningArea(openings: Opening[]): number {
 }
 
 // =============================================================================
+// ROOM COST ESTIMATION MAP
+// =============================================================================
+
+interface RoomCostRates {
+  finishingRatePerSft: number;   // rate per sqft floor area
+  finishingWallRate: number;     // rate per sqft net wall area
+  mepBase: number;               // base MEP cost
+}
+
+/** Room-type-specific cost estimation rates for `calculateRoom` */
+const ROOM_COST_MAP: Record<string, RoomCostRates> = {
+  toilet:    { finishingRatePerSft: 600, finishingWallRate: 200, mepBase: 45000 },
+  kitchen:   { finishingRatePerSft: 350, finishingWallRate: 50,  mepBase: 15000 },
+  dining:    { finishingRatePerSft: 350, finishingWallRate: 50,  mepBase: 15000 },
+  bedroom:   { finishingRatePerSft: 350, finishingWallRate: 50,  mepBase: 15000 },
+  lounge:    { finishingRatePerSft: 350, finishingWallRate: 50,  mepBase: 15000 },
+  porch:     { finishingRatePerSft: 400, finishingWallRate: 0,   mepBase: 5000 },
+  carport:   { finishingRatePerSft: 400, finishingWallRate: 0,   mepBase: 5000 },
+  corridor:  { finishingRatePerSft: 300, finishingWallRate: 40,  mepBase: 10000 },
+  passage:   { finishingRatePerSft: 300, finishingWallRate: 40,  mepBase: 10000 },
+  staircase: { finishingRatePerSft: 550, finishingWallRate: 0,   mepBase: 20000 },
+  store:     { finishingRatePerSft: 250, finishingWallRate: 0,   mepBase: 8000 },
+};
+
+// =============================================================================
 // ROOM CALCULATIONS
 // =============================================================================
 
@@ -251,8 +276,6 @@ export function dpcCuFt(
  */
 export function calculateGreyStructure(
   floors: FloorSpec[],
-  _foundation: FoundationSpec,
-  _buildingCoverage: number,
   structuralSystem: StructuralSystem
 ): GreyStructureMaterials {
   let bricks = 0;
@@ -342,48 +365,10 @@ export function calculateRoom(
   // These get replaced by actual rates when generating BOQ
   const greyCost = floorArea * greyRatePerSft;
 
-  // Finishing varies by room type
-  let finishingCost = 0;
-  let flooringSft = floorArea;
-  let mepCost = 0;
-
-  switch (room.kind) {
-    case 'toilet':
-      finishingCost = floorArea * 600 + netWall * 200;
-      mepCost = 45000; // base + premium
-      break;
-    case 'toilet':
-      finishingCost = floorArea * 600 + netWall * 200;
-      mepCost = 45000;
-      break;
-    case 'kitchen':
-    case 'dining':
-    case 'bedroom':
-      finishingCost = floorArea * 350 + plasterSft * 50;
-      mepCost = 15000;
-      break;
-    case 'porch':
-    case 'carport':
-      finishingCost = floorArea * 400;
-      mepCost = 5000;
-      break;
-    case 'corridor':
-    case 'passage':
-      finishingCost = floorArea * 300 + plasterSft * 40;
-      mepCost = 10000;
-      break;
-    case 'staircase':
-      finishingCost = floorArea * 550;
-      mepCost = 20000;
-      break;
-    case 'store':
-      finishingCost = floorArea * 250;
-      mepCost = 8000;
-      break;
-    default:
-      finishingCost = floorArea * 350;
-      mepCost = 15000;
-  }
+  const rates = ROOM_COST_MAP[room.kind] ?? { finishingRatePerSft: 350, finishingWallRate: 0, mepBase: 15000 };
+  const finishingCost = floorArea * rates.finishingRatePerSft + netWall * rates.finishingWallRate;
+  const mepCost = rates.mepBase;
+  const flooringSft = floorArea;
 
   return {
     room,

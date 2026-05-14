@@ -6,7 +6,6 @@
 import { useMemo } from 'react';
 import { useProjectsStore } from '../features/projects/store';
 import { useBoqStore } from '../features/boq/store';
-import type { Project } from '../types/domain';
 
 interface HeaderProps {
   onSearch?: (query: string) => void;
@@ -17,13 +16,13 @@ export function Header({
   onSearch, 
   showSearch = true,
 }: HeaderProps = {}) {
-  const projects = useProjectsStore((state) => (state as any).projects || []);
+  const projects = useProjectsStore((state) => state.projects);
   const currentProjectId = useProjectsStore((state) => state.currentProjectId);
   const setCurrentProject = useProjectsStore((state) => state.setCurrentProject);
   const items = useBoqStore((state) => state.items);
   
   const currentProject = useMemo(() => 
-    (projects as Project[]).find(p => p.id === currentProjectId),
+    projects.find(p => p.id === currentProjectId),
     [projects, currentProjectId]
   );
 
@@ -44,7 +43,7 @@ export function Header({
           className="project-dropdown"
         >
           <option value="">Select Project</option>
-          {(projects as Project[]).map((project: Project) => (
+          {projects.map((project) => (
             <option key={project.id} value={project.id}>
               {project.name}
             </option>

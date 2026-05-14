@@ -10,6 +10,7 @@
  */
 
 import { create } from 'zustand';
+import { logger } from '../../../lib/logger';
 
 // =============================================================================
 // TYPES
@@ -191,7 +192,7 @@ export const usePaymentStore = create<PaymentState>()((set, get) => ({
         set({ plan, isLoading: false, isDirty: false });
       }
     } catch (err) {
-      console.error('Failed to load payment plan:', err);
+      logger.error('Failed to load payment plan:', err);
       set({ isLoading: false });
     }
   },
@@ -267,6 +268,10 @@ export const usePaymentStore = create<PaymentState>()((set, get) => ({
 
     const updated = markMilestonePaid(plan, milestoneId, plan.milestones.find((m) => m.id === milestoneId)?.amount ?? 0);
     set({ plan: updated, isDirty: true });
+
+    import('../../../lib/db').then(({ savePaymentPlan }) => {
+      savePaymentPlan(updated).catch((err) => logger.error('Failed to auto-save payment:', err));
+    });
   },
 
   markPartial: (milestoneId, paidAmount) => {
@@ -275,6 +280,10 @@ export const usePaymentStore = create<PaymentState>()((set, get) => ({
 
     const updated = markMilestonePaid(plan, milestoneId, paidAmount);
     set({ plan: updated, isDirty: true });
+
+    import('../../../lib/db').then(({ savePaymentPlan }) => {
+      savePaymentPlan(updated).catch((err) => logger.error('Failed to auto-save partial payment:', err));
+    });
   },
 
   clearPlan: () => set({ plan: null, isDirty: false }),

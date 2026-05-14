@@ -8,6 +8,7 @@ import { create } from 'zustand';
 import type { BoqItem, BoqItemCreateInput } from '../../types/domain';
 import * as db from '../../lib/db';
 import { validateBoqItem } from '../../lib/calculations';
+import { logger } from '../../lib/logger';
 
 // Constants
 export const UNIT_OPTIONS = [
@@ -176,7 +177,7 @@ export const useBoqStore = create<BoqState>()((set, get) => ({
         }
         set({ isSaving: false, lastSaved: new Date().toISOString() });
       } catch (error) {
-        console.error('Failed to save item:', error);
+        logger.error('Failed to save item:', error);
         set({ isSaving: false, error: 'Failed to save changes' });
       }
     };
@@ -195,7 +196,7 @@ export const useBoqStore = create<BoqState>()((set, get) => ({
     try {
       await db.deleteBoqItem(id);
     } catch (error) {
-      console.error('Failed to delete item:', error);
+      logger.error('Failed to delete item:', error);
       // Reload items on error
       const { currentProjectId } = get();
       if (currentProjectId) {
@@ -216,7 +217,7 @@ export const useBoqStore = create<BoqState>()((set, get) => ({
     try {
       await db.deleteMultipleBoqItems(ids);
     } catch (error) {
-      console.error('Failed to delete items:', error);
+      logger.error('Failed to delete items:', error);
       // Reload items on error
       const { currentProjectId } = get();
       if (currentProjectId) {
@@ -253,7 +254,7 @@ export const useBoqStore = create<BoqState>()((set, get) => ({
       await db.reorderBoqItems(currentProjectId, itemIds);
       set({ lastSaved: new Date().toISOString() });
     } catch (error) {
-      console.error('Failed to reorder items:', error);
+      logger.error('Failed to reorder items:', error);
     }
   },
 
@@ -279,7 +280,7 @@ export const useBoqStore = create<BoqState>()((set, get) => ({
         isSectionHeader: !item.isSectionHeader,
       });
     } catch (error) {
-      console.error('Failed to toggle section header:', error);
+      logger.error('Failed to toggle section header:', error);
     }
   },
 
@@ -307,10 +308,10 @@ export const useBoqStore = create<BoqState>()((set, get) => ({
     
     try {
       const items = await db.getBoqItems(projectId);
-      console.log('[Store] loadForProject:', projectId, '→ items:', items.length);
+      logger.debug('[Store] loadForProject:', projectId, '→ items:', items.length);
       set({ items, isLoading: false, isDirty: false, lastSaved: null });
     } catch (error) {
-      console.error('[Store] Failed to load BOQ items:', error);
+      logger.error('[Store] Failed to load BOQ items:', error);
       set({ error: 'Failed to load BOQ items', isLoading: false });
     }
   },

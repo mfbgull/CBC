@@ -18,6 +18,7 @@ import { ExportView } from './features/export/views/ExportView';
 import { SettingsView } from './features/settings/views/SettingsView';
 import { ToastContainer } from './lib/ui';
 import { initDatabase } from './lib/db';
+import { logger } from './lib/logger';
 import { useProjectsStore } from './features/projects/store';
 import { useBoqStore } from './features/boq/store';
 import { useRatesStore } from './features/rates/store';
@@ -45,9 +46,9 @@ function App() {
   useEffect(() => {
     const initApp = async () => {
       try {
-        console.log('Initializing database...');
+        logger.debug('Initializing database...');
         await initDatabase();
-        console.log('Database initialized, loading data...');
+        logger.debug('Database initialized, loading data...');
 
         // Initialize all stores
         await Promise.all([
@@ -57,10 +58,10 @@ function App() {
           initSettings(),
         ]);
 
-        console.log('All data loaded');
+        logger.debug('All data loaded');
         setIsDbInitialized(true);
       } catch (error) {
-        console.error('Failed to initialize app:', error);
+        logger.error('Failed to initialize app:', error);
         setDbError(error instanceof Error ? error.message : 'Failed to initialize database');
       }
     };

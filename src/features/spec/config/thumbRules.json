@@ -1,0 +1,77 @@
+{
+  "description": "Construction thumb-rule rates and material factors for Pakistan",
+  "version": 1,
+  "cement": {
+    "ratePerBag": 1450,
+    "bagsPer100Bricks": 1.0,
+    "bagsPerSqftPlaster": 0.02
+  },
+  "steel": {
+    "ratePerTon": 265000,
+    "rccFrameKgPerSqft": 1.1,
+    "loadBearingKgPerSqft": 1.1,
+    "steelFrameKgPerSqft": 1.1
+  },
+  "bricks": {
+    "ratePerPiece": 18,
+    "unitsPerSqft9inch": 10.125
+  },
+  "sand": {
+    "ratePerCft": 105,
+    "cuftPer100Bricks": 4.5,
+    "cuftPerSqftPcc": 0.2
+  },
+  "crush": {
+    "ratePerCft": 120,
+    "cuftPerSqftPcc": 0.25
+  },
+  "finishing": {
+    "flooringRatePerSft": 150,
+    "plasterRatePerSft": 50,
+    "puttyRatePerBag": 800,
+    "primerRatePerLiter": 350,
+    "paintRatePerDrum": 12000,
+    "skirtingRatePerRft": 80,
+    "cabinetRatePerSft": 300,
+    "countertopRatePerSft": 500
+  },
+  "mep": {
+    "lightPointCost": 2500,
+    "fanPointCost": 2000,
+    "socketPointCost": 1500,
+    "acUnitCost": 45000,
+    "conduitCostPerRft": 80,
+    "pprcCostPerRft": 180,
+    "upvcCostPerRft": 120,
+    "geyserCost": 35000,
+    "wetPointCost": 12000
+  },
+  "joinery": {
+    "mainDoorCost": 25000,
+    "internalDoorCost": 15000,
+    "aluminumWindowCostPerSft": 400,
+    "glassCostPerSft": 200
+  },
+  "foundation": {
+    "leanConcreteCostPerCuft": 220,
+    "rccCostPerCuft": 700,
+    "dpcCostPerSqft": 20,
+    "excavationSoftPerCuft": 35,
+    "excavationNormalPerCuft": 50,
+    "excavationRockyPerCuft": 110
+  },
+  "site": {
+    "mapApprovalPerSqft": 10,
+    "scrutinyBase": 25000,
+    "scrutinyPerSqft": 5,
+    "nocCharges": 15000,
+    "termiteProofingPerSqft": 6,
+    "securityPerMonth": 25000,
+    "soilTestNormal": 30000,
+    "soilTestSoft": 45000,
+    "soilTestRocky": 50000,
+    "waterTankSmall": 25000,
+    "waterTankMedium": 40000,
+    "waterTankLarge": 60000
+  }
+}

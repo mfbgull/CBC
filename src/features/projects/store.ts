@@ -1,11 +1,7 @@
-/**
- * Projects feature store
- * Uses Zustand for state management with SQLite persistence
- */
-
 import { create } from 'zustand';
 import type { Project, ProjectCreateInput, ProjectUpdateInput } from '../../types/domain';
 import * as db from '../../lib/db';
+import { logger } from '../../lib/logger';
 
 interface ProjectsState {
   // Data
@@ -26,7 +22,6 @@ interface ProjectsState {
   setError: (error: string | null) => void;
 }
 
-// Debounce helper
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export const useProjectsStore = create<ProjectsState>((set, get) => ({
@@ -46,7 +41,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
       const projects = await db.getAllProjects();
       set({ projects, isLoading: false, isInitialized: true });
     } catch (error) {
-      console.error('Failed to load projects:', error);
+      logger.error('Failed to load projects:', error);
       set({ error: 'Failed to load projects', isLoading: false });
     }
   },
@@ -63,7 +58,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
       }));
       return newProject;
     } catch (error) {
-      console.error('Failed to create project:', error);
+      logger.error('Failed to create project:', error);
       set({ error: 'Failed to create project', isLoading: false });
       throw error;
     }
@@ -85,7 +80,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
       try {
         await db.updateProject(input);
       } catch (error) {
-        console.error('Failed to update project:', error);
+        logger.error('Failed to update project:', error);
         // Reload on error to get consistent state
         const projects = await db.getAllProjects();
         set({ projects });
@@ -103,7 +98,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
     try {
       await db.deleteProject(id);
     } catch (error) {
-      console.error('Failed to delete project:', error);
+      logger.error('Failed to delete project:', error);
       // Reload on error
       const projects = await db.getAllProjects();
       set({ projects });

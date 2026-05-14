@@ -16,6 +16,7 @@ import type {
   WallFace,
   SpaceType,
   FinishType,
+  OpeningType,
   CompassSide,
   WallStatus,
 } from '../../../types/wall';
@@ -143,7 +144,7 @@ function OpeningEditor({ face, wallId, faceSide }: OpeningEditorProps) {
           <div className="flex gap-2">
             <select
               value={newType}
-              onChange={(e) => setNewType(e.target.value as any)}
+              onChange={(e) => setNewType(e.target.value as OpeningType)}
               className="text-xs border rounded px-1 py-1"
             >
               <option value="door">Door</option>
@@ -212,8 +213,9 @@ function FaceEditor({
 }: FaceEditorProps) {
   const { updateFaceFinish } = useWallStore();
 
-  const netArea = calculateWallFaceArea(face, { id: wallId, length: 0, height: 0, faceA: face, faceB: face } as Wall);
-  const skirting = calculateSkirtingLength(face, { length: 0 } as any);
+  const mockWall = { id: wallId, length: 0, height: 0, faceA: face, faceB: face } as Wall;
+  const netArea = calculateWallFaceArea(face, mockWall);
+  const skirting = calculateSkirtingLength(face, mockWall);
 
   return (
     <div className="bg-gray-50 rounded p-3 space-y-2">

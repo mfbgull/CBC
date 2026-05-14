@@ -1,0 +1,17 @@
+{
+  "description": "Paint coverage rates for Pakistan construction standards",
+  "version": 1,
+  "putty": {
+    "coverageSqftPerBag": 450,
+    "coats": 2
+  },
+  "primer": {
+    "coverageSqftPerLiter": 100,
+    "coats": 1
+  },
+  "paint": {
+    "drumSizeLiters": 18,
+    "coverageSqftPerDrum": 400,
+    "coats": 2
+  }
+}

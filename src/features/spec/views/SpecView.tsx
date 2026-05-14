@@ -19,6 +19,7 @@ import { calculateProject } from '../calculations';
 import { formatCurrency } from '../../../lib/calculations';
 import type { FloorSpec } from '../types';
 import { useWallStore, generateWallsForRoom } from '../../walls';
+import { logger } from '../../../lib/logger';
 
 // =============================================================================
 // SPEC VIEW
@@ -134,7 +135,7 @@ export function SpecView(): React.ReactElement {
       await saveProjectSpec(currentProjectId, spec);
       useSpecStore.getState().markSpecClean();
     } catch (err) {
-      console.error('Failed to save spec:', err);
+      logger.error('Failed to save spec:', err);
     } finally {
       setIsSaving(false);
     }
@@ -162,7 +163,7 @@ export function SpecView(): React.ReactElement {
 
       // Generate items from spec
       const items = generateBoqItems();
-      console.log('[SpecView] Generated BOQ items:', items.length);
+      logger.debug('[SpecView] Generated BOQ items:', items.length);
 
       if (items.length > 0) {
         await addItems(items);
@@ -171,7 +172,7 @@ export function SpecView(): React.ReactElement {
         setGenerationMessage('⚠️ No items generated. Check room dimensions.');
       }
     } catch (err) {
-      console.error('Failed to generate BOQ:', err);
+      logger.error('Failed to generate BOQ:', err);
       setGenerationMessage('❌ Failed to generate BOQ items.');
     } finally {
       setIsGenerating(false);
@@ -344,7 +345,7 @@ export function SpecView(): React.ReactElement {
                 onEditPopupOpen={setIsEditPopupOpen}
                 onEditWall={(wallId) => {
                   // Handle wall edit - for now just log it
-                  console.log('Edit wall:', wallId);
+                  logger.debug('Edit wall:', wallId);
                 }}
              />
            </div>

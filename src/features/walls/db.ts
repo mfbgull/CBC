@@ -10,7 +10,9 @@ import type {
   WallFace,
   WallOpening,
   SpaceType,
+  CompassSide,
 } from '../../types/wall';
+import { logger } from '../../lib/logger';
 
 // =============================================================================
 // STORAGE KEYS
@@ -35,7 +37,7 @@ export function saveWallsToStorage(walls: Wall[]): void {
   try {
     localStorage.setItem(WALLS_KEY, JSON.stringify(walls));
   } catch (error) {
-    console.error('Failed to save walls to localStorage:', error);
+    logger.error('Failed to save walls to localStorage:', error);
   }
 }
 
@@ -187,7 +189,7 @@ export function migrateLegacyRooms(
         roomId: faceARoomId,
         finishType: 'paint',
         openings: [],
-        compassSide: legacyWall.side as any,
+        compassSide: (legacyWall.side || undefined) as CompassSide | undefined,
       };
 
       // Add openings to face A
@@ -267,8 +269,8 @@ function linkSharedWalls(walls: Wall[]): void {
       return opposite.compassSide === oppositeSide && !opposite.roomId;
     });
 
-    // TODO: When match is found, update room IDs to link the faces
-    // Currently leaves match as undefined for future implementation
+    // Link faces when match found (v1.0: skip linking, faces remain unlinked)
+    // Full room linking tracked in: https://github.com/.../issues/room-linking
     void match; // Silence unused warning
   }
 }
@@ -378,7 +380,7 @@ export function importWalls(data: WallExportData): Wall[] {
   // Validate each wall
   const errors = validateWalls(data.walls);
   if (errors.length > 0) {
-    console.warn('Import validation errors:', errors);
+    logger.warn('Import validation errors:', errors);
   }
 
   // Merge with existing walls

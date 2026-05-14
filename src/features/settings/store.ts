@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import type { Settings, ExportOptions } from '../../types/domain';
 import { DEFAULT_SETTINGS } from '../../types/domain';
 import * as db from '../../lib/db';
+import { logger } from '../../lib/logger';
 
 // Debounce helper
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -55,7 +56,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       const settings = await db.getSettings();
       set({ settings, isLoading: false, isInitialized: true });
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      logger.error('Failed to load settings:', error);
       set({ error: 'Failed to load settings', isLoading: false });
     }
   },
@@ -73,7 +74,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
         const { settings } = get();
         await db.updateSettings(settings);
       } catch (error) {
-        console.error('Failed to save settings:', error);
+        logger.error('Failed to save settings:', error);
       }
     }, 500);
   },
@@ -86,7 +87,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     set({ settings: DEFAULT_SETTINGS });
     
     // Save to database
-    db.updateSettings(DEFAULT_SETTINGS).catch(console.error);
+    db.updateSettings(DEFAULT_SETTINGS).catch(logger.error);
   },
 
   setLoading: (isLoading) => set({ isLoading }),
